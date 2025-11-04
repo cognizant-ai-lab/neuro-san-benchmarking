@@ -265,6 +265,50 @@ def _solve_atomic(problem: str) -> str:
     return call_agent(problem_solver_session(), problem)
 
 
+def _solve_atomic_with_voting(problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
+    """
+    Generate multiple atomic solutions and vote on them.
+    Returns (chosen_response, finals, votes, winner_idx, solutions).
+    """
+    solutions: list[str] = []
+    finals: list[str] = []
+    for k in range(SOLUTION_CANDIDATE_COUNT):
+        r = call_agent(problem_solver_session(), problem)
+        solutions.append(r)
+        finals.append(_extract_final(r))
+        logging.info(f"[atomic] candidate {k + 1}: {finals[-1]}")
+
+    numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
+    numbered = f"problem: {problem}, {numbered}"
+    logging.info(f"[atomic] composition_discriminator query: {numbered}")
+    votes = [0] * len(finals)
+    winner_idx = None
+    for _ in range(NUMBER_OF_VOTES):
+        vresp = call_agent(composition_discriminator_session(), f"{numbered}\n\n")
+        vote_txt = _extract_final(vresp)
+        logging.info(f"[atomic] solution vote: {vote_txt}")
+        try:
+            idx = int(vote_txt) - 1
+            if idx >= len(finals):
+                logging.error(f"Invalid solution index: {idx}")
+            if 0 <= idx < len(finals):
+                votes[idx] += 1
+                logging.info(f"[atomic] tally: {votes}")
+                if votes[idx] >= WINNING_VOTE_COUNT:
+                    winner_idx = idx
+                    logging.info(f"[atomic] early solution winner: {winner_idx + 1}")
+                    break
+        except ValueError:
+            logging.warning(f"[atomic] malformed vote ignored: {vote_txt!r}")
+
+    if winner_idx is None:
+        winner_idx = max(range(len(votes)), key=lambda i: votes[i])
+
+    logging.info(f"[atomic] final (chosen): {finals[winner_idx]!r}")
+
+    return solutions[winner_idx], finals, votes, winner_idx, solutions
+
+
 def _flatten_tree(node: dict, result: list[dict] | None = None) -> list[dict]:
     """
     Flatten a trace tree into a list of nodes for easy jq querying.
@@ -436,18 +480,30 @@ def _solve_trace(problem: str, depth: int, max_depth: int, path: str) -> tuple[s
 
     if depth >= max_depth:
         logging.info(f"[solve] depth={depth} -> atomic (max depth)")
-        resp = _solve_atomic(problem)
+        resp, finals, votes, winner_idx, solutions = _solve_atomic_with_voting(problem)
         node["response"] = resp
-        node["final"] = _extract_final(resp)
+        node["final"] = finals[winner_idx]
+        node["atomic"] = {
+            "atomic_candidates": finals,
+            "atomic_votes": votes,
+            "atomic_winner_idx": winner_idx,
+            "final_choice": finals[winner_idx],
+        }
         return resp, node
 
     p1, p2, c, decomp_meta = decompose(problem)
 
     if not p1 or not p2 or not c:
         logging.info(f"[solve] depth={depth} -> atomic (no decomp)")
-        resp = _solve_atomic(problem)
+        resp, finals, votes, winner_idx, solutions = _solve_atomic_with_voting(problem)
         node["response"] = resp
-        node["final"] = _extract_final(resp)
+        node["final"] = finals[winner_idx]
+        node["atomic"] = {
+            "atomic_candidates": finals,
+            "atomic_votes": votes,
+            "atomic_winner_idx": winner_idx,
+            "final_choice": finals[winner_idx],
+        }
         return resp, node
 
     logging.info(f"[solve] depth={depth} using decomposition")
