@@ -299,43 +299,7 @@ def multi_step_solve(problem: str) -> str:
 
     if not decomp_candidates:
         logging.info("[pipeline] no steps parsed from any candidate -> atomic solve")
-        # Generate multiple atomic solutions and vote on them
-        solutions: List[str] = []
-        finals: List[str] = []
-        for k in range(CANDIDATE_COUNT):
-            r = call_agent(problem_solver_session(), problem)
-            solutions.append(r)
-            finals.append(_extract_final(r))
-            logging.info(f"[atomic] candidate {k + 1}: {finals[-1]}")
-
-        numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"[atomic] composition_discriminator query: {numbered}")
-        votes = [0] * len(finals)
-        winner_idx = None
-        for _ in range(NUMBER_OF_VOTES):
-            vresp = call_agent(composition_discriminator_session(), f"{numbered}\n\n")
-            vote_txt = _extract_final(vresp)
-            logging.info(f"[atomic] solution vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(finals):
-                    logging.error(f"Invalid solution index: {idx}")
-                if 0 <= idx < len(finals):
-                    votes[idx] += 1
-                    logging.info(f"[atomic] tally: {votes}")
-                    if votes[idx] >= WINNING_VOTE_COUNT:
-                        winner_idx = idx
-                        logging.info(f"[atomic] early solution winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"[atomic] malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda i: votes[i])
-
-        logging.info(f"[atomic] final (chosen): {finals[winner_idx]!r}")
-        return solutions[winner_idx]
+        return call_agent(problem_solver_session(), problem)
 
     # Vote among decompositions (or take the sole candidate)
     if len(decomp_candidates) == 1:
