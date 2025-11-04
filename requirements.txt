@@ -1,0 +1,8 @@
+# Neuro SAN - Core dependency for agent session management
+neuro-san==0.6.5
+
+# OpenAI API for LLM calls
+openai>=1.0.0
+
+# For loading benchmark datasets
+datasets

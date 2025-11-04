@@ -1,0 +1,50 @@
+
+# Copyright (C) 2023-2025 Cognizant Digital Business, Evolutionary AI.
+# All Rights Reserved.
+# Issued under the Academic Public License.
+#
+# You can be released from the terms, and requirements of the Academic Public
+# License by purchasing a commercial license.
+# Purchase of a commercial license is mandatory for any use of the
+# neuro-san SDK Software in commercial settings.
+#
+# END COPYRIGHT
+{
+llm_config {
+    class = "openai"
+    model_name = "gpt-4.1-mini"
+    # temperature = "0.1"
+}
+    "max_iterations": 40000, #3000
+    "max_execution_seconds": 7200, #600
+    "tools": [
+        {
+            "name": "problem_solver",
+            "function": {
+                "description": """
+You are a reasoning module. You will receive a problem, 'P' to solve and return the result.
+First, think carefully about how to solve the problem and provide detailed reasoning steps for how to solve 'P',
+Then solve 'P' using the reasoning steps.
+Return the solution on the last line after 'vote:' with no extra explanation or formatting.
+                """,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem": {
+                            "type": "string",
+                            "description": "Description of a problem."
+                        },
+                    },
+                    "required": ["problem"]
+                }
+            },
+
+            "instructions": """
+You are a reasoning module. You will receive a problem, 'P' to solve and return the result.
+First, think carefully about how to solve the problem and provide detailed reasoning steps for how to solve 'P',
+Then solve 'P' using the reasoning steps.
+Return the solution on the last line after 'vote:' with no extra explanation or formatting.
+""",
+        },
+    ]
+}
