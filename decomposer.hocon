@@ -13,7 +13,7 @@
 llm_config {
     class = "openai"
     model_name = "gpt-4.1-mini"
-    # temperature = "0.1"
+    temperature = "0.5"
 }
     "max_iterations": 40000, #3000
     "max_execution_seconds": 7200, #600
@@ -52,7 +52,9 @@ where 'p1', 'p2' are your formulations for the two sub-problems, and 'c' is how 
 Note that 'p1', and 'p2' will be passed on to another agent to solve them with no other context, and so they need to be clearly defined and self contained.
 
 Make sure 'p1', 'p2', and 'c' are clearly and completely specified with no ambiguity.
+Where reasonable, define 'p1', 'p2', and 'c' symbolically, using mathematical expressions and definitions. Do not use ambiguous terms and words.
 Remember, there should NOT be any reference to 'p1' in the definition of 'p2'.
+'C' should be simple and trivial and should not need much explanation.
 
 Note that the sub-problems are meant to be solved in parallel so they should be self-contained and independent from each other,
 and the solution to one cannot depend on the solution of the other.
