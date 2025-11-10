@@ -317,18 +317,28 @@ def _flatten_tree(node: dict, result: list[dict] | None = None) -> list[dict]:
     if result is None:
         result = []
 
+    decomp_info = node.get("decomposition")
+    if decomp_info is None:
+        node_type = "atomic"
+    elif decomp_info.get("decision") == "no_decomposition":
+        node_type = "no_decomposition"
+    else:
+        node_type = "decomposed"
+
     flat_node = {
         "path": node.get("path", ""),
         "depth": node.get("depth", 0),
-        "type": "atomic" if node.get("decomposition") is None else "decomposed",
-        "problem": node.get("problem", "")[:200],  # Truncate for size
+        "type": node_type,
+        "problem": node.get("problem", "")[:200],
         "final": node.get("final", ""),
         "final_num": node.get("final_num"),
         "error": node.get("error"),
     }
 
-    if node.get("decomposition"):
-        flat_node["decomposition_winner"] = node["decomposition"].get("chosen", "")[:100]
+    if decomp_info:
+        flat_node["decomposition_winner"] = decomp_info.get("chosen", "")[:100]
+        if decomp_info.get("decision"):
+            flat_node["decomposition_decision"] = decomp_info["decision"]
 
     result.append(flat_node)
 
@@ -495,6 +505,8 @@ def _solve_trace(problem: str, depth: int, max_depth: int, path: str) -> tuple[s
 
     if not p1 or not p2 or not c:
         logging.info(f"[solve] depth={depth} -> atomic (no decomp)")
+        if decomp_meta:
+            node["decomposition"] = {**decomp_meta, "decision": "no_decomposition"}
         resp, finals, votes, winner_idx, solutions = _solve_atomic_with_voting(problem)
         node["response"] = resp
         node["final"] = finals[winner_idx]
