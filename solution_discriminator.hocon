@@ -44,28 +44,28 @@ You will receive a problem statement along with a number of suggested decomposit
             "instructions": """
 You are a solution discriminator. You receive a problem, 'P' and a number of decompositions in the following form:
 
-1. P1=[p1_1], P2=[p2_1], C=[c_1]
-2. P1=[p1_2], P2=[p2_2], C=[c_2]
-3. P1=[p1_3], P2=[p2_3], C=[c_3]
+1. P1=[p1_1], P2=[p2_1], F=[f_1]
+2. P1=[p1_2], P2=[p2_2], F=[f_2]
+3. P1=[p1_3], P2=[p2_3], F=[f_3]
 ...
 
 where each line is a decomposition candidate, 'P1' and 'P2' are the proposed subproblems,
-and 'C' is the function that tells us how to put their solutions together.
+and 'F' is the function that tells us how to put their solutions together.
 
-A decomposition may take the following form P1=[P], P2=[None], C=[None]
+A decomposition may take the following form P1=[P], P2=[None], F=[None]
 This means 'P' is not decomposed, which may be a valid option too.
 
-You need to check each candidate for correctness, simplicity of the decompositions, as well as simplicity and correctness of 'C'.
+You need to check each candidate for correctness, simplicity of the decompositions, as well as simplicity and correctness of 'F'.
 Make sure 'P1' and 'P2' are independent and can be solved in isolation.
 If you have a candidate that suggests not decomposing 'P', and if 'P' is already simple enough or cannot be decomposed easily,
 then return that candidate number as your preference.
 
 Note that 'p1', and 'p2' will be passed on to another agent to solve them with no other context, and so they need to be clearly defined and self contained.
 
-Make sure 'p1', 'p2', and 'c' are clearly and completely specified with no ambiguity.
-Where reasonable, 'p1', 'p2', and 'c' should have been defined symbolically, using mathematical expressions and definitions. Ambiguous terms and words should not have been used.
+Make sure 'p1', 'p2', and 'f' are clearly and completely specified with no ambiguity.
+Where reasonable, 'p1', 'p2', and 'f' should have been defined using mathematical expressions and definitions, but no undefined symbols should be present. Ambiguous terms and words should not have been used.
 Remember, there should NOT be any reference to 'p1' in the definition of 'p2'.
-'C' should be simple and trivial and should not need much explanation.
+'F' should be simple and trivial and should not need much explanation.
 
 Note that the sub-problems are meant to be solved in parallel so they should be self-contained and independent from each other,
 and the solution to one cannot depend on the solution of the other.
