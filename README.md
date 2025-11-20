@@ -1,10 +1,10 @@
 # Neuro-SAN Benchmarking
 
-A benchmarking suite for evaluating multi-agent reasoning systems on arithmetic problems using Neuro-SAN.
+A benchmarking suite for evaluating multi-agent reasoning systems using Neuro-SAN.
 
 ## Overview
 
-This repository contains tools for benchmarking multi-agent systems on multiplication and other arithmetic tasks. The main components are:
+This repository contains tools for benchmarking multi-agent systems on multiplication and other tasks. The main components are:
 
 - **multiagent_reasoner.py** - Multi-agent reasoning system with decomposition, voting, and composition
 - **linear_multiagent_reasoner.py** - Linear variant of the multi-agent reasoner
