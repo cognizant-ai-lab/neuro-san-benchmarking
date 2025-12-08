@@ -40,7 +40,10 @@ def generate_sorting_tasks(n, list_len, min_val, max_val, seed=0):
         lst = [rnd.randint(min_val, max_val) for _ in range(list_len)]
         yield {
             "id": f"sort-{list_len}-{i}",
-            "question": f"Sort the following list of integers in ascending order and output ONLY the JSON list on a single line after '####':\n{lst}",
+            "question": f"""
+Sort the following list of integers in ascending order and output ONLY the JSON list
+on a single line after '####':\n{lst}
+""",
             # canonical JSON list string; we'll compare list equality
             "answer": json.dumps(sorted(lst), separators=(",", ":")),
         }

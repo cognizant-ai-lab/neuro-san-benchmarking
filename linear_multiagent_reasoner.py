@@ -118,7 +118,7 @@ def _extract_final(text: str, token: str = FINAL_TOKEN) -> str:
         if token_low in ln_low:
             # find index of the match in a lowercase version, but slice original line
             idx = ln_low.find(token_low)
-            return ln[idx + len(token) :].strip()
+            return ln[idx + len(token):].strip()
     return lines[-1] if lines else ""
 
 

@@ -277,7 +277,10 @@ class AgentBenchmarkRunner:
             instruction = (
                 "You are sorting a list of integers. Reason briefly, then follow the output format EXACTLY."
                 if show_work
-                else "Sort the list of integers correctly. Do NOT include your reasoning. Follow the output format EXACTLY."
+                else """
+Sort the list of integers correctly. Do NOT include your reasoning.
+Follow the output format EXACTLY.
+"""
             )
             format_rule = (
                 f"OUTPUT FORMAT (must match exactly):\n"
@@ -295,7 +298,10 @@ class AgentBenchmarkRunner:
             instruction = (
                 "You are solving a numeric problem."
                 if show_work
-                else "Solve the problem correctly. You may use scratch work internally, but DO NOT include your full reasoning."
+                else """
+Solve the problem correctly. You may use scratch work internally,
+but DO NOT include your full reasoning.
+"""
             )
             format_rule = f"At the end, output the final numeric answer on its own line as '{final_token} <number>'."
 
@@ -320,7 +326,7 @@ class AgentBenchmarkRunner:
         if not text:
             return None
         pos = text.rfind(final_token)
-        segment = text[pos + len(final_token) :] if pos != -1 else text
+        segment = text[pos + len(final_token):] if pos != -1 else text
         # find first '[' ... ']' in the tail
         try:
             start = segment.index("[")
@@ -388,7 +394,7 @@ class AgentBenchmarkRunner:
             return None
         pos = text.rfind(token)
         if pos != -1:
-            tail = text[pos + len(token) :]
+            tail = text[pos + len(token):]
             m = self.NUM_RE.search(tail)
             if m:
                 return self._normalize_number(m.group(0))
