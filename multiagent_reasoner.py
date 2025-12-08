@@ -44,7 +44,7 @@ if LOG_DIR:
 
 _DECOMP_FIELD_RE = re.compile(r"(P1|P2|C)\s*=\s*\[(.*?)]", re.DOTALL)
 
-os.environ["AGENT_MANIFEST_FILE"] = "./manifest_solver.hocon"
+os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
 os.environ["AGENT_TOOL_PATH"] = "coded_tools"
 
 FINAL_TOKEN = os.getenv("FINAL_TOKEN", "vote:")  # agents end their final answer on the last line after this token
