@@ -40,3 +40,11 @@ disable=
     missing-module-docstring,
     missing-function-docstring,
     logging-fstring-interpolation,
+
+# Work to remove these
+max-args=15
+max-attributes=16
+max-branches=20
+max-locals=30
+max-positional-arguments=15
+max-statements=75

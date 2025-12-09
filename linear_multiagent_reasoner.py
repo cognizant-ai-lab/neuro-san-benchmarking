@@ -290,6 +290,7 @@ def _vote_among_candidates(
     return winner_idx
 
 
+# pylint: disable=too-many-locals
 def multi_step_solve(problem: str) -> str:
     """
       1) Call multi_step_decomposer once to get a numbered list of steps.

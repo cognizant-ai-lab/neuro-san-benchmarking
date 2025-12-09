@@ -620,14 +620,16 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> str:
                 "c": node["decomposition"].get("c"),
             }
 
-        if node.get("composition"):
+        composition = node.get("composition")
+        if composition:
+            sub_finals = node.get("sub_finals")
             _trace_data.solve = {
-                "s1_final": node["sub_finals"]["s1_final"] if node.get("sub_finals") else None,
-                "s2_final": node["sub_finals"]["s2_final"] if node.get("sub_finals") else None,
-                "c": node["composition"]["c_text"],
-                "composed_candidates": node["composition"]["composed_candidates"],
-                "composition_votes": node["composition"]["composition_votes"],
-                "composition_winner_idx": node["composition"]["composition_winner_idx"],
+                "s1_final": sub_finals["s1_final"] if sub_finals else None,
+                "s2_final": sub_finals["s2_final"] if sub_finals else None,
+                "c": composition["c_text"],
+                "composed_candidates": composition["composed_candidates"],
+                "composition_votes": composition["composition_votes"],
+                "composition_winner_idx": composition["composition_winner_idx"],
             }
 
     return resp
@@ -787,10 +789,10 @@ def main():
                 failure_record["log_file"] = str(log_file) if "log_file" in locals() else None
 
             try:
-                with open(LOG_FAILURES_JSONL, "a") as f:
+                with open(LOG_FAILURES_JSONL, "a", encoding="utf-8") as f:
                     f.write(json.dumps(failure_record) + "\n")
                 logging.info(f"[main] Failure logged to {LOG_FAILURES_JSONL}")
-            except Exception as e:
+            except IOError as e:
                 logging.error(f"[main] Failed to write failure log: {e}")
         else:
             logging.info(f"[main] Correct answer; not logging to {LOG_FAILURES_JSONL}")
