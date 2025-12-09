@@ -26,7 +26,7 @@ from typing import Tuple
 from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
-from session_manager import _get_session
+from session_manager import SessionManager
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
@@ -50,15 +50,15 @@ def _build_steps_block(all_steps: List[str]) -> str:
 
 
 def multi_step_decomposer_session() -> AgentSession:
-    return _get_session("multi_step_decomposer")
+    return SessionManager.get_session("multi_step_decomposer")
 
 
 def composition_discriminator_session() -> AgentSession:
-    return _get_session("composition_discriminator")
+    return SessionManager.get_session("composition_discriminator")
 
 
 def problem_solver_session() -> AgentSession:
-    return _get_session("problem_solver")
+    return SessionManager.get_session("problem_solver")
 
 
 # Unique temp file per *call*

@@ -15,29 +15,38 @@
 # END COPYRIGHT
 
 import os
-import threading
+from threading import RLock
 
 from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.agent_session_factory import AgentSessionFactory
 
-AGENTS_PORT = 30011
 
-# Global, shared across threads
-_factory_lock = threading.RLock()
-_factory: AgentSessionFactory | None = None
-_sessions: dict[str, AgentSession] = {}
+# pylint: disable=too-few-public-methods
+class SessionManager:
+    """
+    Singleton class to manage agent sessions.
+    """
 
+    AGENTS_PORT: int = 30011
 
-def _get_session(agent_name: str) -> AgentSession:
-    """Return a shared, thread-safe session for the named agent."""
-    global _factory
-    with _factory_lock:
-        if _factory is None:
-            _factory = AgentSessionFactory()
-        sess = _sessions.get(agent_name)
-        if sess is None:
-            sess = _factory.create_session(
-                "direct", agent_name, "localhost", AGENTS_PORT, False, {"user_id": os.environ.get("USER")}
-            )
-            _sessions[agent_name] = sess
-        return sess
+    # Global, shared across threads
+    _factory_lock: RLock = RLock()
+    _factory: AgentSessionFactory | None = None
+    _sessions: dict[str, AgentSession] = {}
+
+    @staticmethod
+    def get_session(agent_name: str) -> AgentSession:
+        """
+        Return a shared, thread-safe session for the named agent.
+        """
+        with SessionManager._factory_lock:
+            if SessionManager._factory is None:
+                SessionManager._factory = AgentSessionFactory()
+            sess = SessionManager._sessions.get(agent_name)
+            if sess is None:
+                sess = SessionManager._factory.create_session(
+                    "direct", agent_name, "localhost", SessionManager.AGENTS_PORT, False,
+                    {"user_id": os.environ.get("USER")}
+                )
+                SessionManager._sessions[agent_name] = sess
+            return sess

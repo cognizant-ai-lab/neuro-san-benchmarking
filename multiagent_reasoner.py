@@ -26,7 +26,7 @@ from pathlib import Path
 from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
-from session_manager import _get_session
+from session_manager import SessionManager
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -63,19 +63,19 @@ _trace_data = threading.local()
 
 
 def decomposer_session() -> AgentSession:
-    return _get_session("decomposer")
+    return SessionManager.get_session("decomposer")
 
 
 def solution_discriminator_session() -> AgentSession:
-    return _get_session("solution_discriminator")
+    return SessionManager.get_session("solution_discriminator")
 
 
 def composition_discriminator_session() -> AgentSession:
-    return _get_session("composition_discriminator")
+    return SessionManager.get_session("composition_discriminator")
 
 
 def problem_solver_session() -> AgentSession:
-    return _get_session("problem_solver")
+    return SessionManager.get_session("problem_solver")
 
 
 # Unique temp file per *call*
