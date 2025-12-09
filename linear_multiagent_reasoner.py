@@ -24,8 +24,9 @@ from typing import Optional
 from typing import Tuple
 
 from neuro_san.client.agent_session_factory import AgentSession
-from neuro_san.client.agent_session_factory import AgentSessionFactory
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
+
+from session_manager import _get_session
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
@@ -42,28 +43,6 @@ FINAL_TOKEN = "vote:"  # agents end their final answer on the last line after th
 WINNING_VOTE_COUNT = 8
 CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
 NUMBER_OF_VOTES = (2 * WINNING_VOTE_COUNT) - 1
-
-AGENTS_PORT = 30011
-
-# Global, shared across threads
-_factory_lock = threading.RLock()
-_factory: AgentSessionFactory | None = None
-_sessions: dict[str, AgentSession] = {}
-
-
-def _get_session(agent_name: str) -> AgentSession:
-    """Return a shared, thread-safe session for the named agent."""
-    global _factory
-    with _factory_lock:
-        if _factory is None:
-            _factory = AgentSessionFactory()
-        sess = _sessions.get(agent_name)
-        if sess is None:
-            sess = _factory.create_session(
-                "direct", agent_name, "localhost", AGENTS_PORT, False, {"user_id": os.environ.get("USER")}
-            )
-            _sessions[agent_name] = sess
-        return sess
 
 
 def _build_steps_block(all_steps: List[str]) -> str:

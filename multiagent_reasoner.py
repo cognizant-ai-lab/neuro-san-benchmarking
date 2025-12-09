@@ -24,8 +24,9 @@ import time
 from pathlib import Path
 
 from neuro_san.client.agent_session_factory import AgentSession
-from neuro_san.client.agent_session_factory import AgentSessionFactory
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
+
+from session_manager import _get_session
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -58,29 +59,7 @@ SOLUTION_CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
 
 LOG_FAILURES_JSONL = os.getenv("LOG_FAILURES_JSONL")
 
-AGENTS_PORT = 30011
-
 _trace_data = threading.local()
-
-# Global, shared across threads
-_factory_lock = threading.RLock()
-_factory: AgentSessionFactory | None = None
-_sessions: dict[str, AgentSession] = {}
-
-
-def _get_session(agent_name: str) -> AgentSession:
-    """Return a shared, thread-safe session for the named agent."""
-    global _factory
-    with _factory_lock:
-        if _factory is None:
-            _factory = AgentSessionFactory()
-        sess = _sessions.get(agent_name)
-        if sess is None:
-            sess = _factory.create_session(
-                "direct", agent_name, "localhost", AGENTS_PORT, False, {"user_id": os.environ.get("USER")}
-            )
-            _sessions[agent_name] = sess
-        return sess
 
 
 def decomposer_session() -> AgentSession:
