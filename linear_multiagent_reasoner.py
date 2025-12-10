@@ -33,7 +33,7 @@ logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", strea
 # Expect the multi_step_decomposer to output a numbered list of steps, possibly on the last line after FINAL_TOKEN.
 _STEP_LINE_RE = re.compile(r"^\s*(\d+)[.)]\s+(.*\S)\s*$", re.MULTILINE)
 
-os.environ["AGENT_MANIFEST_FILE"] = "./manifest_solver.hocon"
+os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
 os.environ["AGENT_TOOL_PATH"] = "coded_tools"
 
 FINAL_TOKEN = "vote:"  # agents end their final answer on the last line after this token
@@ -118,7 +118,7 @@ def _extract_final(text: str, token: str = FINAL_TOKEN) -> str:
         if token_low in ln_low:
             # find index of the match in a lowercase version, but slice original line
             idx = ln_low.find(token_low)
-            return ln[idx + len(token) :].strip()
+            return ln[idx + len(token):].strip()
     return lines[-1] if lines else ""
 
 
