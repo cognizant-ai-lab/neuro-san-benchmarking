@@ -1,0 +1,2 @@
+jupyter==1.1.1
+openai==2.9.0
