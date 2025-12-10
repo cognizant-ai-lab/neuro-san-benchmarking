@@ -5,6 +5,7 @@
 from tqdm import tqdm
 from toh_simulator import TowerOfHanoi
 
+
 def oracle_step(previous_move, current_state):
 
     pegs = [list(peg) for peg in current_state]
@@ -12,9 +13,9 @@ def oracle_step(previous_move, current_state):
     move = None
 
     if previous_move is None:
-        move = [1, 0, 1] # First move
+        move = [1, 0, 1]    # First move
 
-    elif previous_move[0] == 1: # If moved disk 1 last move, make only other legal move
+    elif previous_move[0] == 1:     # If moved disk 1 last move, make only other legal move
 
         for from_peg in range(3):
             if len(pegs[from_peg]) > 0:
@@ -24,7 +25,7 @@ def oracle_step(previous_move, current_state):
                         if len(pegs[to_peg]) == 0 or pegs[to_peg][-1] > top_disk:
                             move = [top_disk, from_peg, to_peg]
 
-    else: # Otherwise, move disk 1 clockwise
+    else:   # Otherwise, move disk 1 clockwise
 
         for from_peg in range(3):
             if len(pegs[from_peg]) > 0:

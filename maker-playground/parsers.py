@@ -26,6 +26,7 @@ def extract_balanced_brackets(text, start_idx):
         i += 1
     return text[start_idx:i] + ']'
 
+
 def parse_move_state_repair(response_text):
     try:
         move_matches = re.findall(r"(?i)\bmove\b\s*=\s*(\[[^\[\]]*\])", response_text)
@@ -47,7 +48,7 @@ def parse_move_state_repair(response_text):
     except Exception as e:
         raise ValueError("Could not parse 'next_state' from response.") from e
 
-    return tupple(move), tuple(tuple(peg) for peg in next_state)
+    return tuple(move), tuple(tuple(peg) for peg in next_state)
 
 
 # Flag parser
@@ -57,6 +58,7 @@ def _validate_move(move):
         raise ValueError("'move' must be a list of exactly 3 integers.")
     return tuple(move)
 
+
 def _validate_state(state, D=20):
     if not (isinstance(state, list) and len(state) == 3 and all(isinstance(t, list) for t in state)):
         raise ValueError("'next_state' must be a list of three lists.")
@@ -65,10 +67,11 @@ def _validate_state(state, D=20):
         raise ValueError("All entries in 'next_state' must be integers.")
     if len(flat) != D or set(flat) != set(range(1, D+1)):
         missing = sorted(set(range(1, 21)) - set(flat))
-        extra   = sorted(set(flat) - set(range(1, 21)))
+        extra = sorted(set(flat) - set(range(1, 21)))
         raise ValueError(f"State must contain 1..{D} exactly once. "
                          f"Missing: {missing or '[]'}, Extras: {extra or '[]'}")
     return tuple(tuple(peg) for peg in state)
+
 
 def parse_move_state_flag(response_text: str, D=20):
     # Match square brackets

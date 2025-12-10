@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, List,Tuple
+from typing import Dict, List, Tuple
 from copy import deepcopy
+import sys
 
 Move = List[int]          # [disk_id, from_peg, to_peg]
 State = Dict[str, List[int]]   # three pegs, each a stack (bottom->top left->right)
 Plan = List[Move]         # list of moves
+
 
 class TowerOfHanoi:
     """Tower of Hanoi puzzle simulator
@@ -48,7 +50,7 @@ class TowerOfHanoi:
 
     def reset(self) -> Tuple[State, int]:
         """Reset the puzzle to its initial configuration."""
-        self._state: State = {'0': list(range(self._num_disks, 0, -1)), '1': [], '2':[]}
+        self._state: State = {'0': list(range(self._num_disks, 0, -1)), '1': [], '2': []}
         self._move_count: int = 0
         return self.get_state(), 0
 
@@ -111,11 +113,15 @@ class TowerOfHanoi:
         # Rule 2: the specified disk must be the *top* disk on the source peg
         top_disk = src_stack[-1]
         if disk_id != top_disk:
-            return self.get_state(), 0, True, {"reason": f"disk {disk_id} is not on top of peg {from_peg} (top is {top_disk})"}
+            return self.get_state(), 0, True, {
+                "reason": f"disk {disk_id} is not on top of peg {from_peg} (top is {top_disk})"
+            }
 
         # Rule 3: cannot place larger disk atop a smaller one
         if dst_stack and dst_stack[-1] < disk_id:
-            return self.get_state(), 0, True, {"reason":f"illegal move: cannot place larger disk {disk_id} on smaller disk {dst_stack[-1]}"}
+            return self.get_state(), 0, True, {
+                "reason": f"illegal move: cannot place larger disk {disk_id} on smaller disk {dst_stack[-1]}"
+            }
 
         # Perform the move
         src_stack.pop()          # remove from source
@@ -146,8 +152,6 @@ class TowerOfHanoi:
 
 
 if __name__ == "__main__":
-    import json
-    import sys
 
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 3
     sim = TowerOfHanoi(n)
