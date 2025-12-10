@@ -14,9 +14,9 @@
 #
 # END COPYRIGHT
 
+import argparse
 import csv
 import json
-import json as _json
 import os
 import random
 import re
@@ -101,6 +101,8 @@ class AgentBenchmarkRunner:
         # Will be created on start()
         self._session = None
         self._progress_csv_file = None
+        self._progress_csv_path = None
+        self._progress_csv_writer = None
         self.sample_retries = 0
 
     # --- streaming progress CSV helpers ---
@@ -108,6 +110,7 @@ class AgentBenchmarkRunner:
         if not hasattr(self, "_progress_csv_file") or self._progress_csv_file is None:
             ts = time.strftime("%Y%m%d_%H%M%S")
             self._progress_csv_path = f"results_progress_{ts}.csv"
+            # pylint: disable=consider-using-with
             self._progress_csv_file = open(self._progress_csv_path, "w", newline="", encoding="utf-8")
             self._progress_csv_writer = csv.DictWriter(self._progress_csv_file, fieldnames=fieldnames)
             self._progress_csv_writer.writeheader()
@@ -160,7 +163,7 @@ class AgentBenchmarkRunner:
             try:
                 self._progress_csv_file.flush()
                 os.fsync(self._progress_csv_file.fileno())
-            except Exception:
+            except IOError:
                 pass
             try:
                 self._progress_csv_file.close()
@@ -244,10 +247,11 @@ class AgentBenchmarkRunner:
             return data
 
         try:
+            # pylint: disable=import-outside-toplevel
             from datasets import load_dataset  # type: ignore
         except Exception as e:
             raise RuntimeError(
-                "HuggingFace `datasets` not available. Install it (`pip install datasets`) " "or pass local_jsonl."
+                "HuggingFace `datasets` not available. Install it (`pip install datasets`) or pass local_jsonl."
             ) from e
 
         ds = load_dataset("gsm8k", "main")
@@ -332,7 +336,7 @@ but DO NOT include your full reasoning.
             start = segment.index("[")
             end = segment.rindex("]") + 1
             js = segment[start:end]
-            parsed = _json.loads(js)
+            parsed = json.loads(js)
             if isinstance(parsed, list):
                 # coerce to ints if they look like ints
                 out = []
@@ -344,6 +348,7 @@ but DO NOT include your full reasoning.
                     else:
                         return None
                 return out
+        # pylint: disable=broad-exception-caught
         except Exception:
             return None
         return None
@@ -360,6 +365,7 @@ but DO NOT include your full reasoning.
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=max(0.001, timeout_ms / 1000.0),
+            check=True,
         )
         # Prefer stdout; if empty but there is stderr, surface it.
         out = proc.stdout.decode("utf-8", errors="ignore").strip()
@@ -372,6 +378,7 @@ but DO NOT include your full reasoning.
         try:
             v = float(s)
             return str(int(v)) if v.is_integer() else str(v)
+        # pylint: disable=broad-exception-caught
         except Exception:
             return s
 
@@ -379,8 +386,9 @@ but DO NOT include your full reasoning.
         if answer_format == "list-json":
             # gold_text is a canonical JSON list string
             try:
-                arr = _json.loads(gold_text)
+                arr = json.loads(gold_text)
                 return [int(x) for x in arr]
+            # pylint: disable=broad-exception-caught
             except Exception:
                 return None
         return self.parse_prediction(gold_text, final_token=final_token)
@@ -403,7 +411,7 @@ but DO NOT include your full reasoning.
             return self._normalize_number(all_nums[-1].group(0))
         return None
 
-    def _evaluate_item_with_retries(self, ex, *, per_item_timeout_ms, retries, final_token, answer_format):
+    def evaluate_item_with_retries(self, ex, *, per_item_timeout_ms, retries, final_token, answer_format):
         # identical to the inner loop you had in evaluate(); reused by both seq/parallel
         attempt = 0
         backoff = 0.5
@@ -432,8 +440,8 @@ but DO NOT include your full reasoning.
         (
             cfg,
             ex,
-            fewshot_prefix,
-            show_work,
+            _,  # fewshot_prefix,
+            _,  # show_work,
             per_item_timeout_ms,
             retries,
             final_token,
@@ -457,7 +465,7 @@ but DO NOT include your full reasoning.
         runner.sample_retries = sample_retries
         runner.start(user_meta={"benchmark": "parallel"})
         try:
-            return runner._evaluate_item_with_retries(
+            return runner.evaluate_item_with_retries(
                 ex,
                 per_item_timeout_ms=per_item_timeout_ms,
                 retries=retries,
@@ -483,7 +491,7 @@ but DO NOT include your full reasoning.
             payloads = [(ex,) for ex in items]
 
             def submit_fn(ex):
-                return self._evaluate_item_with_retries(
+                return self.evaluate_item_with_retries(
                     ex,
                     per_item_timeout_ms=per_item_timeout_ms,
                     retries=retries,
@@ -575,6 +583,7 @@ but DO NOT include your full reasoning.
                 thread = self.new_thread(timeout_ms=per_item_timeout_ms)
                 response, _ = self.single_turn(thread, prompt)
                 break
+            # pylint: disable=broad-exception-caught
             except Exception as e:
                 err = str(e)
                 if attempt < retries:
@@ -666,7 +675,7 @@ but DO NOT include your full reasoning.
                     try:
                         self.close()
                         self.start(user_meta={"benchmark": "rerun"})
-                    except Exception:
+                    except IOError:
                         pass
                     time.sleep(backoff)
                     backoff *= 2  # exponential
@@ -763,10 +772,7 @@ but DO NOT include your full reasoning.
         return arr[f] + (k - f) * (arr[c] - arr[f])
 
 
-# ------------------ Example CLI usage ------------------
-
-if __name__ == "__main__":
-    import argparse
+def main():
 
     ap = argparse.ArgumentParser(description="Generic Agent Benchmark Runner (GSM8K by default).")
     ap.add_argument("--task", default="gsm8k", help="Task name (default: gsm8k)")
@@ -856,3 +862,8 @@ if __name__ == "__main__":
 
     csv_path, jsonl_path = runner.save_results(payload, tag=args.task)
     print(f"\nSaved: {csv_path}\nSaved: {jsonl_path}")
+
+
+# ------------------ Example CLI usage ------------------
+if __name__ == "__main__":
+    main()

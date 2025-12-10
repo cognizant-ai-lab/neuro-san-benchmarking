@@ -24,8 +24,9 @@ import time
 from pathlib import Path
 
 from neuro_san.client.agent_session_factory import AgentSession
-from neuro_san.client.agent_session_factory import AgentSessionFactory
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
+
+from session_manager import SessionManager
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -58,45 +59,23 @@ SOLUTION_CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
 
 LOG_FAILURES_JSONL = os.getenv("LOG_FAILURES_JSONL")
 
-AGENTS_PORT = 30011
-
 _trace_data = threading.local()
-
-# Global, shared across threads
-_factory_lock = threading.RLock()
-_factory: AgentSessionFactory | None = None
-_sessions: dict[str, AgentSession] = {}
-
-
-def _get_session(agent_name: str) -> AgentSession:
-    """Return a shared, thread-safe session for the named agent."""
-    global _factory
-    with _factory_lock:
-        if _factory is None:
-            _factory = AgentSessionFactory()
-        sess = _sessions.get(agent_name)
-        if sess is None:
-            sess = _factory.create_session(
-                "direct", agent_name, "localhost", AGENTS_PORT, False, {"user_id": os.environ.get("USER")}
-            )
-            _sessions[agent_name] = sess
-        return sess
 
 
 def decomposer_session() -> AgentSession:
-    return _get_session("decomposer")
+    return SessionManager.get_session("decomposer")
 
 
 def solution_discriminator_session() -> AgentSession:
-    return _get_session("solution_discriminator")
+    return SessionManager.get_session("solution_discriminator")
 
 
 def composition_discriminator_session() -> AgentSession:
-    return _get_session("composition_discriminator")
+    return SessionManager.get_session("composition_discriminator")
 
 
 def problem_solver_session() -> AgentSession:
-    return _get_session("problem_solver")
+    return SessionManager.get_session("problem_solver")
 
 
 # Unique temp file per *call*
@@ -620,14 +599,16 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> str:
                 "c": node["decomposition"].get("c"),
             }
 
-        if node.get("composition"):
+        composition = node.get("composition")
+        if composition:
+            sub_finals = node.get("sub_finals")
             _trace_data.solve = {
-                "s1_final": node["sub_finals"]["s1_final"] if node.get("sub_finals") else None,
-                "s2_final": node["sub_finals"]["s2_final"] if node.get("sub_finals") else None,
-                "c": node["composition"]["c_text"],
-                "composed_candidates": node["composition"]["composed_candidates"],
-                "composition_votes": node["composition"]["composition_votes"],
-                "composition_winner_idx": node["composition"]["composition_winner_idx"],
+                "s1_final": sub_finals["s1_final"] if sub_finals else None,
+                "s2_final": sub_finals["s2_final"] if sub_finals else None,
+                "c": composition["c_text"],
+                "composed_candidates": composition["composed_candidates"],
+                "composition_votes": composition["composition_votes"],
+                "composition_winner_idx": composition["composition_winner_idx"],
             }
 
     return resp
@@ -787,10 +768,10 @@ def main():
                 failure_record["log_file"] = str(log_file) if "log_file" in locals() else None
 
             try:
-                with open(LOG_FAILURES_JSONL, "a") as f:
+                with open(LOG_FAILURES_JSONL, "a", encoding="utf-8") as f:
                     f.write(json.dumps(failure_record) + "\n")
                 logging.info(f"[main] Failure logged to {LOG_FAILURES_JSONL}")
-            except Exception as e:
+            except IOError as e:
                 logging.error(f"[main] Failed to write failure log: {e}")
         else:
             logging.info(f"[main] Correct answer; not logging to {LOG_FAILURES_JSONL}")
