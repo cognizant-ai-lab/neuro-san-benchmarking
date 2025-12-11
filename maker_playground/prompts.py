@@ -14,9 +14,7 @@ another stack.
 3. A larger disk may not be placed on top of a smaller disk.
 The goal is to move the entire stack to the third peg.
 
-Example:
-With 3 disks numbered 1 (smallest), 2, and 3 (largest), the initial state is [[3, 2, 1], [], []],
-and a solution might be:
+Example: With 3 disks numbered 1 (smallest), 2, and 3 (largest), the initial state is [[3, 2, 1], [], []], and a solution might be:
 moves = [[1, 0, 2], [2, 0, 1], [1, 2, 1], [3, 0, 2], [1, 1, 0], [2, 1, 2], [1, 0, 2]]
 This means: Move disk 1 from peg 0 to peg 2, then move disk 2 from peg 0 to peg 1, and so on.
 
@@ -26,7 +24,7 @@ Requirements:
 ```move = [disk id, from peg, to peg]```
 - Ensure your answer includes the next state resulting from applying the move to the current state in this EXACT FORMAT:
 ```next_state = [[...], [...], [...]]```
-"""
+"""     # noqa: E501
 
 USER_TEMPLATE = """
 Rules:
@@ -43,9 +41,8 @@ Previous move: {previous_move}
 
 Current State: {current_state}
 
-Based on the previous move and current state, find the single next move that follows the procedure
-and the resulting next state.
-"""
+Based on the previous move and current state, find the single next move that follows the procedure and the resulting next state.
+"""     # noqa: E501
 
 
 def create_prompts(previous_move, current_state):
