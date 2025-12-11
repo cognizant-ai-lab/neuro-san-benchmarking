@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 from decomposer.neuro_san_solver import NeuroSanSolver
+from decomposer.solver import Solver
 
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -293,7 +294,7 @@ def _find_failure_node(node: dict) -> tuple[str, dict] | None:
     return None
 
 
-def solve(solver: NeuroSanSolver, problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> str:
+def solve(solver: Solver, problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> str:
     """
     Recursive solver with tree tracing.
     Returns the final agent response (which includes the {FINAL_TOKEN} line).
@@ -343,7 +344,7 @@ def main():
     _trace_data.decomposition = None
     _trace_data.solve = None
 
-    solver = NeuroSanSolver()
+    solver: Solver = NeuroSanSolver()
     final_resp = solve(solver, problem, depth=0, max_depth=MAX_DEPTH)
 
     extracted_final = solver.extract_final(final_resp)
