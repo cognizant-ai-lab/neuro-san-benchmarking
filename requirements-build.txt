@@ -1,0 +1,33 @@
+# We separate out requirements that are specific to the build, but not
+# necessary for operation to minimize the size of containers
+
+# Tests
+pytest==8.3.3
+pytest-asyncio==1.1.0
+pytest-timer==1.0.0
+pytest-timeout>=2.3.1
+timeout-decorator==0.5.0
+coverage==7.6.1
+pytest-cov==5.0.0
+parameterized
+pytest-xdist
+pymarkdownlnt==0.9.30
+
+# Code quality
+flake8==7.3.0
+pylint==4.0.2
+
+# Special pylint extensions
+pylint-protobuf==0.22.0
+
+# packaging
+build
+setuptools>=61.0
+wheel
+setuptools-scm==8.1.0
+
+# Tools that check that README renders correctly on PyPi
+readme_renderer
+readme_renderer[md]
+# Note: Workaround for install problem with cmarkgfm==2025.11.20
+cmarkgfm<=2024.11.20

@@ -2,7 +2,8 @@
 
 ## Overview
 
-The `multiagent_reasoner.py` system has been instrumented with comprehensive failure logging and analysis capabilities to help identify patterns in system behavior when it fails on multiplication problems.
+The `multiagent_reasoner.py` system has been instrumented with comprehensive failure logging and
+analysis capabilities to help identify patterns in system behavior when it fails on multiplication problems.
 
 ## Key Features Added
 
@@ -40,7 +41,8 @@ The system automatically classifies failures into categories:
 
 ### 4. Per-Run Log Files
 
-When `LOG_DIR` is set, each run creates a detailed log file with all INFO-level messages, making it easy to trace through the entire reasoning process for failed cases.
+When `LOG_DIR` is set, each run creates a detailed log file with all INFO-level messages,
+making it easy to trace through the entire reasoning process for failed cases.
 
 ## Usage Examples
 
@@ -88,7 +90,8 @@ python decomposer/agent_benchmark_runner.py \
   --limit 10
 ```
 
-**Note**: The benchmark runner uses `--final-token '>>>>'` but multiagent_reasoner uses `vote:` internally. The system will still work correctly as the runner extracts the final number.
+**Note**: The benchmark runner uses `--final-token '>>>>'` but multiagent_reasoner uses `vote:` internally.
+The system will still work correctly as the runner extracts the final number.
 
 ## Analyzing Failure Logs
 
@@ -195,7 +198,8 @@ Based on the code review and initial testing:
 2. **Increase to WINNING_VOTE_COUNT=8** to see which patterns persist
 3. **Review failure logs** to identify common decomposition strategies that fail
 4. **Check composition instructions** in failures to see if they're ambiguous
-5. **Look for patterns** in the types of numbers that cause failures (e.g., numbers with many 9s, numbers close to powers of 10)
+5. **Look for patterns** in the types of numbers that cause failures
+   (e.g., numbers with many 9s, numbers close to powers of 10)
 
 ## Next Steps
 

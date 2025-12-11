@@ -48,3 +48,4 @@ max-branches=20
 max-locals=30
 max-positional-arguments=15
 max-statements=75
+max-returns=8
