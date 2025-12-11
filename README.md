@@ -35,7 +35,7 @@ This repository contains tools for benchmarking multi-agent systems on multiplic
 Test the multi-agent reasoner on a single multiplication problem:
 
 ```bash
-LOG_LEVEL=INFO echo "What is 46048 × 42098?" | python multiagent_reasoner.py
+LOG_LEVEL=INFO echo "What is 46048 × 42098?" | python decomposer/multiagent_reasoner.py
 ```
 
 ### Benchmark Suite
@@ -43,8 +43,8 @@ LOG_LEVEL=INFO echo "What is 46048 × 42098?" | python multiagent_reasoner.py
 Run the benchmark on a dataset:
 
 ```bash
-python agent_benchmark_runner.py \
-  --python-prog multiagent_reasoner.py \
+python decomposer/agent_benchmark_runner.py \
+  --python-prog decomposer/multiagent_reasoner.py \
   --task mul_5x5 \
   --local-jsonl data/bench_long_mul_5_5__200.jsonl \
   --answer-format number \
@@ -71,8 +71,8 @@ export MAX_DEPTH=3
 export LOG_FAILURES_JSONL="./failures.jsonl"
 export LOG_DIR="./logs"
 
-python agent_benchmark_runner.py \
-  --python-prog multiagent_reasoner.py \
+python decomposer/agent_benchmark_runner.py \
+  --python-prog decomposer/multiagent_reasoner.py \
   --task mul_5x5 \
   --local-jsonl data/bench_long_mul_5_5__200.jsonl \
   --answer-format number \

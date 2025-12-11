@@ -24,7 +24,7 @@ Requirements:
 ```move = [disk id, from peg, to peg]```
 - Ensure your answer includes the next state resulting from applying the move to the current state in this EXACT FORMAT:
 ```next_state = [[...], [...], [...]]```
-"""
+"""     # noqa: E501
 
 USER_TEMPLATE = """
 Rules:
@@ -42,7 +42,8 @@ Previous move: {previous_move}
 Current State: {current_state}
 
 Based on the previous move and current state, find the single next move that follows the procedure and the resulting next state.
-"""
+"""     # noqa: E501
+
 
 def create_prompts(previous_move, current_state):
 
