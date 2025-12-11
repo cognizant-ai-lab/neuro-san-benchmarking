@@ -4,7 +4,8 @@ A benchmarking suite for evaluating multi-agent reasoning systems using Neuro-SA
 
 ## Overview
 
-This repository contains tools for benchmarking multi-agent systems on multiplication and other tasks. The main components are:
+This repository contains tools for benchmarking multi-agent systems on multiplication and other tasks.
+The main components are:
 
 - **multiagent_reasoner.py** - Multi-agent reasoning system with decomposition, voting, and composition
 - **linear_multiagent_reasoner.py** - Linear variant of the multi-agent reasoner
@@ -15,15 +16,20 @@ This repository contains tools for benchmarking multi-agent systems on multiplic
 
 1. Clone this repository
 2. Create a virtual environment:
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
+
 3. Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
+
 4. Set up your OpenAI API key:
+
    ```bash
    export OPENAI_API_KEY="your-api-key-here"
    ```

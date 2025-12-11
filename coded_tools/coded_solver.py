@@ -45,6 +45,10 @@ ISOLATE_ATTEMPTS = True
 
 
 class CallAgent(CodedTool):
+    """
+    Neuro SAN CodedTool implementation to call an agent and return a solution.
+    """
+
     async def async_invoke(self, args: Dict[str, Any], sly_data: Dict[str, Any]) -> Union[Dict[str, Any], str]:
         problem: str = args.get("problem", "")
         if not problem:
