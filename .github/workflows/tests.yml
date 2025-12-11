@@ -43,10 +43,8 @@ jobs:
       - name: Run flake8
         run: flake8
 
-      - name: Run pytest with start of server (excluding integration tests & Smoke tests)
+      - name: Run pytest
         shell: bash
-        run: |
-          build_scripts/server_start.sh
           pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto --cov=neuro_san
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
