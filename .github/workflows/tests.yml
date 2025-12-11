@@ -31,8 +31,8 @@ jobs:
       - name: Show installed packages
         run: pip freeze
 
-      - name: Run pylint
-        run: build_scripts/run_pylint.sh
+      # - name: Run pylint
+      #   run: build_scripts/run_pylint.sh
 
       - name: Run pymarkdownlint
         run: build_scripts/run_markdownlint.sh
@@ -55,6 +55,9 @@ jobs:
       - name: Check README renders correctly on PyPI
         run: |
           python -m readme_renderer README.md
+
+      - name: Run pylint
+        run: build_scripts/run_pylint.sh
 
       - name: Notify Slack on success
         if: success()
