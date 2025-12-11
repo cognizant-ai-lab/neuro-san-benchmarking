@@ -14,10 +14,6 @@ omit =
 cover_pylib = false
 
 [report]
-# Include specific source
-source =
-    **/*.py
-
 # Omit specific files or directories from the coverage measurement
 omit =
     # Exclude the entire 'tests' directory
