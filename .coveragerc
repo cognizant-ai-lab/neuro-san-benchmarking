@@ -1,5 +1,6 @@
 [run]
-# Include specific source
+# Include specific source so we can tell when entire directories are not measured
+# XXX It'd sure be nice to have a way to make this repo-agnostic.
 source = 
     decomposer
     maker_playground
