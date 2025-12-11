@@ -15,6 +15,7 @@ Search [existing issues](../../issues) to see if your question has already been 
 ### Ask a Question
 
 If you can't find an answer, open a new issue with:
+
 - A clear description of your problem
 - What you've already tried
 - Relevant code snippets or error messages
@@ -35,4 +36,3 @@ Commercial support is not currently available for this project.
 ---
 
 Thank you for using this project!
-
