@@ -2,6 +2,7 @@
 # Include specific source so we can tell when entire directories are not measured
 # XXX It'd sure be nice to have a way to make this repo-agnostic.
 source = 
+    coded_tools
     decomposer
     maker_playground
 
