@@ -129,6 +129,7 @@ class TowerOfHanoi:
         self._move_count += 1
         return self.get_state(), 1, False, {"reason": "ok"}
 
+    # pylint: disable=redefined-outer-name
     def apply_moves(self, moves: Plan) -> Tuple[State, int, bool, dict]:
         """Execute a sequence of moves atomically.
 
