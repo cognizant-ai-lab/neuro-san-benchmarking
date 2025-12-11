@@ -45,8 +45,7 @@ jobs:
 
       - name: Run pytest
         shell: bash
-          pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto \
-            --cov=decomposer --cov=maker_playground
+          pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto --cov=decomposer --cov=maker_playground
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AGENT_TOOL_PATH: "./coded_tools"
