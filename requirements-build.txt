@@ -17,6 +17,9 @@ pymarkdownlnt==0.9.30
 flake8==7.3.0
 pylint==4.0.2
 
+# Special pylint extensions
+pylint-protobuf==0.22.0
+
 # packaging
 build
 setuptools>=61.0
