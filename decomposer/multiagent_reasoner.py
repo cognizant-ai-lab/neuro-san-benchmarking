@@ -26,7 +26,7 @@ from pathlib import Path
 from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
-from session_manager import SessionManager
+from decomposer.session_manager import SessionManager
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
