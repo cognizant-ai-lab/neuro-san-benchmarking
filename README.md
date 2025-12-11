@@ -5,7 +5,7 @@ A benchmarking suite for evaluating multi-agent reasoning systems using Neuro-SA
 ## Overview
 
 This repository contains tools for benchmarking multi-agent systems on multiplication and other tasks.
-The main components are:
+The main components under decomposer/ are:
 
 - **multiagent_reasoner.py** - Multi-agent reasoning system with decomposition, voting, and composition
 - **linear_multiagent_reasoner.py** - Linear variant of the multi-agent reasoner
