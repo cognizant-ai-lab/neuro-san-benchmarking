@@ -1,6 +1,8 @@
 [run]
 # Include specific source
-source = *
+source = 
+    decomposer/*
+    maker_playground/*
 
 # Omit specific files or directories from the coverage measurement
 omit =
