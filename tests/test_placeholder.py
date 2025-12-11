@@ -17,7 +17,7 @@
 from unittest import TestCase
 
 
-class TestAccountant(TestCase):
+class TestPlaceholder(TestCase):
     """
     Placeholder for Unit tests
     """
