@@ -47,7 +47,7 @@ jobs:
       - name: Run pytest
         shell: bash
         run: |
-          pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto --cov
+          pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto --cov-config=.coveragerc --cov
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AGENT_TOOL_PATH: "./coded_tools"
