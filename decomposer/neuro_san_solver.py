@@ -24,6 +24,7 @@ from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
 from decomposer.session_manager import SessionManager
+from decomposer.solver import Solver
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
@@ -33,8 +34,6 @@ _DECOMP_FIELD_RE = re.compile(r"(P1|P2|C)\s*=\s*\[(.*?)]", re.DOTALL)
 os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
 os.environ["AGENT_TOOL_PATH"] = "coded_tools"
 
-FINAL_TOKEN = os.getenv("FINAL_TOKEN", "vote:")  # agents end their final answer on the last line after this token
-
 # Tuning knobs with environment variable overrides
 WINNING_VOTE_COUNT = int(os.getenv("WINNING_VOTE_COUNT", "2"))
 CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
@@ -42,7 +41,7 @@ NUMBER_OF_VOTES = (2 * WINNING_VOTE_COUNT) - 1
 SOLUTION_CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
 
 
-class NeuroSanSolver:
+class NeuroSanSolver(Solver):
     """
     Generic solver implementation that uses Neuro SAN.
     """
@@ -83,7 +82,7 @@ class NeuroSanSolver:
         logging.debug(f"call_agent({agent_session}): received {len(resp)} chars")
         return resp
 
-    def extract_final(self, text: str, token: str = FINAL_TOKEN) -> str:
+    def extract_final(self, text: str, token: str = Solver.FINAL_TOKEN) -> str:
         """
         Return the text after the last occurrence of token (case-insensitive),
         or the last non-empty line if not found. Preserves original casing.
