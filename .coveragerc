@@ -1,15 +1,13 @@
 [run]
 # Include specific source
-include =
+source =
     **/*.py
 
 # Omit specific files or directories from the coverage measurement
 omit =
     # Exclude the entire 'tests' directory
     tests/*
-    # Exclude all __init__.py files
-    **/__init__.py
-    # Exclude everythin in /usr which usually also means Python standard library
+    # Exclude everything in /usr which usually also means Python standard library
     /usr/*
 
 # Do not measure coverage for the Python standard library
@@ -17,17 +15,12 @@ cover_pylib = false
 
 [report]
 # Include specific source
-include =
+source =
     **/*.py
 
 # Omit specific files or directories from the coverage measurement
 omit =
     # Exclude the entire 'tests' directory
     tests/*
-    # Exclude all __init__.py files
-    **/__init__.py
-    # Exclude everythin in /usr which usually also means Python standard library
+    # Exclude everything in /usr which usually also means Python standard library
     /usr/*
-
-# Do not measure coverage for the Python standard library
-cover_pylib = false
