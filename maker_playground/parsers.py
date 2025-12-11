@@ -59,23 +59,22 @@ def _validate_move(move):
     return tuple(move)
 
 
-# pylint: disable=invalid-name
-def _validate_state(state, D=20):
+def _validate_state(state, num_disks=20):
     if not (isinstance(state, list) and len(state) == 3 and all(isinstance(t, list) for t in state)):
         raise ValueError("'next_state' must be a list of three lists.")
     flat = [x for t in state for x in t]
     if not all(isinstance(x, int) for x in flat):
         raise ValueError("All entries in 'next_state' must be integers.")
-    if len(flat) != D or set(flat) != set(range(1, D+1)):
+    if len(flat) != num_disks or set(flat) != set(range(1, num_disks+1)):
         missing = sorted(set(range(1, 21)) - set(flat))
         extra = sorted(set(flat) - set(range(1, 21)))
-        raise ValueError(f"State must contain 1..{D} exactly once. "
+        raise ValueError(f"State must contain 1..{num_disks} exactly once. "
                          f"Missing: {missing or '[]'}, Extras: {extra or '[]'}")
     return tuple(tuple(peg) for peg in state)
 
 
 # pylint: disable=invalid-name
-def parse_move_state_flag(response_text: str, D=20):
+def parse_move_state_flag(response_text: str, num_disks=20):
     # Match square brackets
     move_pat = re.compile(r"(?is)\bmove\b\s*=\s*(\[[^\[\]]*\])")
     state_pat = re.compile(
@@ -101,4 +100,4 @@ def parse_move_state_flag(response_text: str, D=20):
     except Exception as e:
         raise ValueError("Could not parse 'next_state' as Python lists.") from e
 
-    return _validate_move(move), _validate_state(next_state, D)
+    return _validate_move(move), _validate_state(next_state, num_disks)
