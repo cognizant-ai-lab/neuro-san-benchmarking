@@ -29,4 +29,4 @@ class TestAgentBenchmarkRunner(TestCase):
         Placeholder test until real unit tests are written.
         """
         runner = AgentBenchmarkRunner()
-        self.assertNotNone(runner)
+        self.assertIsNotNone(runner)
