@@ -1,0 +1,11 @@
+[run]
+# Include specific source
+include =
+    */*.py
+
+# Omit specific files or directories from the coverage measurement
+omit =
+    # Exclude the entire 'tests' directory
+    tests/*
+    # Exclude all __init__.py files
+    **/__init__.py
