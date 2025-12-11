@@ -59,6 +59,7 @@ def _validate_move(move):
     return tuple(move)
 
 
+# pylint: disable=invalid-name
 def _validate_state(state, D=20):
     if not (isinstance(state, list) and len(state) == 3 and all(isinstance(t, list) for t in state)):
         raise ValueError("'next_state' must be a list of three lists.")
@@ -73,6 +74,7 @@ def _validate_state(state, D=20):
     return tuple(tuple(peg) for peg in state)
 
 
+# pylint: disable=invalid-name
 def parse_move_state_flag(response_text: str, D=20):
     # Match square brackets
     move_pat = re.compile(r"(?is)\bmove\b\s*=\s*(\[[^\[\]]*\])")
