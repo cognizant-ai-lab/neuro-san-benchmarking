@@ -1,7 +1,7 @@
 [run]
 # Include specific source
 include =
-    */*.py
+    **/*.py
 
 # Omit specific files or directories from the coverage measurement
 omit =
@@ -9,3 +9,6 @@ omit =
     tests/*
     # Exclude all __init__.py files
     **/__init__.py
+
+# Do not measure coverage for the Python standard library
+cover_pylib = false
