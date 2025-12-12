@@ -27,6 +27,7 @@ from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
 from decomposer.session_manager import SessionManager
 from decomposer.solver import Solver
+from decomposer.solver_parsing import SolverParsing
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
@@ -57,6 +58,7 @@ class NeuroSanSolver(Solver):
         self.decomposer_session: AgentSession = SessionManager.get_session("decomposer")
         self.problem_solver_session: AgentSession = SessionManager.get_session("problem_solver")
         self.solution_discriminator_session: AgentSession = SessionManager.get_session("solution_discriminator")
+        self.parsing = SolverParsing()
 
     def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
         """
@@ -93,7 +95,7 @@ class NeuroSanSolver(Solver):
                 "atomic_winner_idx": winner_idx,
                 "final_choice": finals[winner_idx],
             }
-            node["extracted_final"] = self.extract_final(resp)
+            node["extracted_final"] = self.parsing.extract_final(resp)
             return node
 
         p1, p2, c, decomp_meta = self.decompose(problem)
@@ -111,7 +113,7 @@ class NeuroSanSolver(Solver):
                 "atomic_winner_idx": winner_idx,
                 "final_choice": finals[winner_idx],
             }
-            node["extracted_final"] = self.extract_final(resp)
+            node["extracted_final"] = self.parsing.extract_final(resp)
             return node
 
         logging.info(f"[solve] depth={depth} using decomposition")
@@ -135,7 +137,7 @@ class NeuroSanSolver(Solver):
         for k in range(SOLUTION_CANDIDATE_COUNT):
             r = self.call_agent(self.problem_solver_session, comp_prompt)
             solutions.append(r)
-            finals.append(self.extract_final(r))
+            finals.append(self.parsing.extract_final(r))
             logging.info(f"[solve] depth={depth} composed candidate {k + 1}: {finals[-1]}")
 
         numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
@@ -145,7 +147,7 @@ class NeuroSanSolver(Solver):
         winner_idx = None
         for _ in range(NUMBER_OF_VOTES):
             vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
-            vote_txt = self.extract_final(vresp)
+            vote_txt = self.parsing.extract_final(vresp)
             logging.info(f"[solve] depth={depth} solution vote: {vote_txt}")
             try:
                 idx = int(vote_txt) - 1
@@ -174,7 +176,7 @@ class NeuroSanSolver(Solver):
             "composition_winner_idx": winner_idx,
             "final_choice": finals[winner_idx],
         }
-        node["extracted_final"] = self.extract_final(resp)
+        node["extracted_final"] = self.parsing.extract_final(resp)
 
         logging.info(f"[solve] depth={depth} composed final (chosen): {finals[winner_idx]!r}")
 
@@ -204,71 +206,6 @@ class NeuroSanSolver(Solver):
         logging.debug(f"call_agent({agent_session}): received {len(resp)} chars")
         return resp
 
-    def extract_final(self, text: str, token: str = Solver.FINAL_TOKEN) -> str:
-        """
-        Return the text after the last occurrence of token (case-insensitive),
-        or the last non-empty line if not found. Preserves original casing.
-        """
-        if not text:
-            return ""
-        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-        if not lines:
-            return ""
-        tkn = (token or "").strip()
-        if not tkn:
-            return lines[-1]
-
-        tkn_lower = tkn.lower()
-        for ln in reversed(lines):
-            # Find LAST occurrence of token in this line (case-insensitive)
-            idx = ln.lower().rfind(tkn_lower)
-            if idx != -1:
-                return ln[idx + len(tkn):].strip()
-        return lines[-1]
-
-    def _extract_decomposition_text(self, resp: str) -> str | None:
-        """
-        Scan the FULL agent response (multi-line) for P1=[...], P2=[...], C=[...].
-        Returns a canonical single-line 'P1=[...], P2=[...], C=[...]' or None.
-        """
-        fields = {}
-        for label, val in _DECOMP_FIELD_RE.findall(resp or ""):
-            fields[label] = val.strip()
-
-        if fields:
-            p1 = fields.get("P1", "None")
-            p2 = fields.get("P2", "None")
-            c = fields.get("C", "None")
-            return f"P1=[{p1}], P2=[{p2}], C=[{c}]"
-
-        # Fallback: if the last line already contains the canonical string
-        tail = self.extract_final(resp)
-        if "P1=" in tail and "C=" in tail:
-            return tail
-        return None
-
-    def _parse_decomposition(self, decomp_line: str) -> tuple[str | None, str | None, str | None]:
-        """
-        Parses: P1=[p1], P2=[p2], C=[c]
-        Returns (p1, p2, c) with 'None' coerced to None.
-        """
-        parts = {
-            seg.split("=", 1)[0].strip(): seg.split("=", 1)[1].strip() for seg in decomp_line.split(",") if "=" in seg
-        }
-
-        p1 = self.unbracket(parts.get("P1"))
-        p2 = self.unbracket(parts.get("P2"))
-        c = self.unbracket(parts.get("C"))
-        return p1, p2, c
-
-    def unbracket(self, s: str | None) -> str | None:
-        if not s:
-            return None
-        s = s.strip()
-        if s.startswith("[") and s.endswith("]"):
-            s = s[1:-1].strip()
-        return None if s == "None" else s
-
     def _compose_prompt(self, c: str, s1: str, s2: str) -> str:
         """
         Build a prompt for the final composition solve: C(s1, s2).
@@ -292,7 +229,7 @@ class NeuroSanSolver(Solver):
         for k in range(SOLUTION_CANDIDATE_COUNT):
             r = self.call_agent(self.problem_solver_session, problem)
             solutions.append(r)
-            finals.append(self.extract_final(r))
+            finals.append(self.parsing.extract_final(r))
             logging.info(f"[atomic] candidate {k + 1}: {finals[-1]}")
 
         numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
@@ -302,7 +239,7 @@ class NeuroSanSolver(Solver):
         winner_idx = None
         for _ in range(NUMBER_OF_VOTES):
             vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
-            vote_txt = self.extract_final(vresp)
+            vote_txt = self.parsing.extract_final(vresp)
             logging.info(f"[atomic] solution vote: {vote_txt}")
             try:
                 idx = int(vote_txt) - 1
@@ -334,7 +271,7 @@ class NeuroSanSolver(Solver):
         candidates: list[str] = []
         for _ in range(CANDIDATE_COUNT):
             resp = self.call_agent(self.decomposer_session, problem)
-            cand = self._extract_decomposition_text(resp)
+            cand = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
 
@@ -353,7 +290,7 @@ class NeuroSanSolver(Solver):
         for _ in range(NUMBER_OF_VOTES):
             disc_prompt = f"{numbered}\n\n"
             vresp = self.call_agent(self.solution_discriminator_session, disc_prompt)
-            vote_txt = self.extract_final(vresp)
+            vote_txt = self.parsing.extract_final(vresp)
             logging.info(f"[decompose] discriminator raw vote: {vote_txt}")
             try:
                 idx = int(vote_txt) - 1
@@ -374,7 +311,7 @@ class NeuroSanSolver(Solver):
 
         logging.info(f"[decompose] final winner: {winner_idx + 1} -> {candidates[winner_idx]}")
 
-        p1, p2, c = self._parse_decomposition(candidates[winner_idx])
+        p1, p2, c = self.parsing.parse_decomposition(candidates[winner_idx])
 
         metadata = {
             "candidates": candidates,
