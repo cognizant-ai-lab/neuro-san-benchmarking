@@ -18,8 +18,6 @@ from typing import Any
 
 import logging
 import os
-import re
-import sys
 import threading
 
 from neuro_san.client.agent_session_factory import AgentSession
@@ -29,30 +27,35 @@ from decomposer.session_manager import SessionManager
 from decomposer.solver import Solver
 from decomposer.solver_parsing import SolverParsing
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
-
-_DECOMP_FIELD_RE = re.compile(r"(P1|P2|C)\s*=\s*\[(.*?)]", re.DOTALL)
-
-os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
-os.environ["AGENT_TOOL_PATH"] = "coded_tools"
-
-# Tuning knobs with environment variable overrides
-WINNING_VOTE_COUNT = int(os.getenv("WINNING_VOTE_COUNT", "2"))
-CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
-NUMBER_OF_VOTES = (2 * WINNING_VOTE_COUNT) - 1
-SOLUTION_CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
-
 
 class NeuroSanSolver(Solver):
     """
     Generic solver implementation that uses Neuro SAN.
     """
 
-    def __init__(self):
+    def __init__(self, winning_vote_count: int = 2,
+                 candidate_count: int = None,
+                 number_of_votes: int = None,
+                 solution_candidate_count: int = None):
         """
         Constructor.
         """
+
+        self.winning_vote_count: int = winning_vote_count
+        default_count: int = (2 * winning_vote_count) - 1
+
+        self.candidate_count: int = candidate_count
+        if self.candidate_count is None:
+            self.candidate_count = default_count
+
+        self.number_of_votes: int = number_of_votes
+        if self.number_of_votes is None:
+            self.number_of_votes = default_count
+
+        self.solution_candidate_count: int = solution_candidate_count
+        if self.solution_candidate_count is None:
+            self.solution_candidate_count = default_count
+
         # Initialize the Neuro SAN agent sessions
         self.composition_discriminator_session: AgentSession = SessionManager.get_session("composition_discriminator")
         self.decomposer_session: AgentSession = SessionManager.get_session("decomposer")
@@ -134,7 +137,7 @@ class NeuroSanSolver(Solver):
 
         solutions: list[str] = []
         finals: list[str] = []
-        for k in range(SOLUTION_CANDIDATE_COUNT):
+        for k in range(self.solution_candidate_count):
             r = self.call_agent(self.problem_solver_session, comp_prompt)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
@@ -145,7 +148,7 @@ class NeuroSanSolver(Solver):
         logging.info(f"[solve] depth={depth} composition_discriminator query: {numbered}")
         votes = [0] * len(finals)
         winner_idx = None
-        for _ in range(NUMBER_OF_VOTES):
+        for _ in range(self.number_of_votes):
             vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
             vote_txt = self.parsing.extract_final(vresp)
             logging.info(f"[solve] depth={depth} solution vote: {vote_txt}")
@@ -156,7 +159,7 @@ class NeuroSanSolver(Solver):
                 if 0 <= idx < len(finals):
                     votes[idx] += 1
                     logging.info(f"[solve] depth={depth} tally: {votes}")
-                    if votes[idx] >= WINNING_VOTE_COUNT:
+                    if votes[idx] >= self.winning_vote_count:
                         winner_idx = idx
                         logging.info(f"[solve] depth={depth} early solution winner: {winner_idx + 1}")
                         break
@@ -226,7 +229,7 @@ class NeuroSanSolver(Solver):
         """
         solutions: list[str] = []
         finals: list[str] = []
-        for k in range(SOLUTION_CANDIDATE_COUNT):
+        for k in range(self.solution_candidate_count):
             r = self.call_agent(self.problem_solver_session, problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
@@ -237,7 +240,7 @@ class NeuroSanSolver(Solver):
         logging.info(f"[atomic] composition_discriminator query: {numbered}")
         votes = [0] * len(finals)
         winner_idx = None
-        for _ in range(NUMBER_OF_VOTES):
+        for _ in range(self.number_of_votes):
             vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
             vote_txt = self.parsing.extract_final(vresp)
             logging.info(f"[atomic] solution vote: {vote_txt}")
@@ -248,7 +251,7 @@ class NeuroSanSolver(Solver):
                 if 0 <= idx < len(finals):
                     votes[idx] += 1
                     logging.info(f"[atomic] tally: {votes}")
-                    if votes[idx] >= WINNING_VOTE_COUNT:
+                    if votes[idx] >= self.winning_vote_count:
                         winner_idx = idx
                         logging.info(f"[atomic] early solution winner: {winner_idx + 1}")
                         break
@@ -269,7 +272,7 @@ class NeuroSanSolver(Solver):
         Returns (p1, p2, c, metadata_dict).
         """
         candidates: list[str] = []
-        for _ in range(CANDIDATE_COUNT):
+        for _ in range(self.candidate_count):
             resp = self.call_agent(self.decomposer_session, problem)
             cand = self.parsing.extract_decomposition_text(resp)
             if cand:
@@ -287,7 +290,7 @@ class NeuroSanSolver(Solver):
 
         votes = [0] * len(candidates)
         winner_idx = None
-        for _ in range(NUMBER_OF_VOTES):
+        for _ in range(self.number_of_votes):
             disc_prompt = f"{numbered}\n\n"
             vresp = self.call_agent(self.solution_discriminator_session, disc_prompt)
             vote_txt = self.parsing.extract_final(vresp)
@@ -299,7 +302,7 @@ class NeuroSanSolver(Solver):
                 if 0 <= idx < len(candidates):
                     votes[idx] += 1
                     logging.info(f"[decompose] tally: {votes}")
-                    if votes[idx] >= WINNING_VOTE_COUNT:
+                    if votes[idx] >= self.winning_vote_count:
                         winner_idx = idx
                         logging.info(f"[decompose] early winner: {winner_idx + 1}")
                         break

@@ -302,7 +302,7 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
     :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
               and the extracted final answer from that line
     """
-    solver: Solver = NeuroSanSolver()
+    solver: Solver = NeuroSanSolver(winning_vote_count=WINNING_VOTE_COUNT)
     node: dict[str, Any] = solver.solve(problem, depth, max_depth, "0")
 
     _trace_data.tree = node
