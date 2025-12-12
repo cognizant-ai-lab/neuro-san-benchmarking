@@ -49,7 +49,7 @@ making it easy to trace through the entire reasoning process for failed cases.
 ### Basic Usage (No Logging)
 
 ```bash
-echo "What is 46048 × 42098?" | python3 multiagent_reasoner.py
+echo "What is 46048 × 42098?" | python3 decomposer/multiagent_reasoner.py
 ```
 
 ### With Failure Logging
@@ -57,7 +57,7 @@ echo "What is 46048 × 42098?" | python3 multiagent_reasoner.py
 ```bash
 export LOG_FAILURES_JSONL="/tmp/failures.jsonl"
 export LOG_DIR="/tmp/mr_logs"
-echo "What is 46048 × 42098?" | python3 multiagent_reasoner.py
+echo "What is 46048 × 42098?" | python3 decomposer/multiagent_reasoner.py
 ```
 
 ### With Custom Tuning Parameters
@@ -67,7 +67,7 @@ export WINNING_VOTE_COUNT=8
 export MAX_DEPTH=3
 export LOG_FAILURES_JSONL="/tmp/failures.jsonl"
 export LOG_DIR="/tmp/mr_logs"
-echo "What is 46048 × 42098?" | python3 multiagent_reasoner.py
+echo "What is 46048 × 42098?" | python3 decomposer/multiagent_reasoner.py
 ```
 
 ### With Benchmark Runner
@@ -77,8 +77,8 @@ export LOG_FAILURES_JSONL="./failures_wvc8.jsonl"
 export LOG_DIR="./mr_logs"
 export WINNING_VOTE_COUNT=8
 
-python agent_benchmark_runner.py \
-  --python-prog multiagent_reasoner.py \
+python decomposer/agent_benchmark_runner.py \
+  --python-prog decomposer/multiagent_reasoner.py \
   --task mul_5x5 \
   --local-jsonl data/bench_long_mul_5_5__200.jsonl \
   --answer-format number \
