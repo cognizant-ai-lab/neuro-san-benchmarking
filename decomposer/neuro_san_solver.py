@@ -48,6 +48,16 @@ class NeuroSanSolver(Solver):
     Generic solver implementation that uses Neuro SAN.
     """
 
+    def __init__(self):
+        """
+        Constructor.
+        """
+        # Initialize the Neuro SAN agent sessions
+        self.composition_discriminator_session: AgentSession = SessionManager.get_session("composition_discriminator")
+        self.decomposer_session: AgentSession = SessionManager.get_session("decomposer")
+        self.problem_solver_session: AgentSession = SessionManager.get_session("problem_solver")
+        self.solution_discriminator_session: AgentSession = SessionManager.get_session("solution_discriminator")
+
     def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
         """
         Internal recursive solver that returns (response, trace_node).
@@ -123,7 +133,7 @@ class NeuroSanSolver(Solver):
         solutions: list[str] = []
         finals: list[str] = []
         for k in range(SOLUTION_CANDIDATE_COUNT):
-            r = self.call_agent(self.problem_solver_session(), comp_prompt)
+            r = self.call_agent(self.problem_solver_session, comp_prompt)
             solutions.append(r)
             finals.append(self.extract_final(r))
             logging.info(f"[solve] depth={depth} composed candidate {k + 1}: {finals[-1]}")
@@ -134,7 +144,7 @@ class NeuroSanSolver(Solver):
         votes = [0] * len(finals)
         winner_idx = None
         for _ in range(NUMBER_OF_VOTES):
-            vresp = self.call_agent(self.composition_discriminator_session(), f"{numbered}\n\n")
+            vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
             vote_txt = self.extract_final(vresp)
             logging.info(f"[solve] depth={depth} solution vote: {vote_txt}")
             try:
@@ -169,18 +179,6 @@ class NeuroSanSolver(Solver):
         logging.info(f"[solve] depth={depth} composed final (chosen): {finals[winner_idx]!r}")
 
         return node
-
-    def decomposer_session(self) -> AgentSession:
-        return SessionManager.get_session("decomposer")
-
-    def solution_discriminator_session(self) -> AgentSession:
-        return SessionManager.get_session("solution_discriminator")
-
-    def composition_discriminator_session(self) -> AgentSession:
-        return SessionManager.get_session("composition_discriminator")
-
-    def problem_solver_session(self) -> AgentSession:
-        return SessionManager.get_session("problem_solver")
 
     # Unique temp file per *call*
     def _tmpfile(self, stem: str) -> str:
@@ -282,7 +280,7 @@ class NeuroSanSolver(Solver):
         """
         Single call to problem_solver; returns the full agent response.
         """
-        return self.call_agent(self.problem_solver_session(), problem)
+        return self.call_agent(self.problem_solver_session, problem)
 
     def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
@@ -292,7 +290,7 @@ class NeuroSanSolver(Solver):
         solutions: list[str] = []
         finals: list[str] = []
         for k in range(SOLUTION_CANDIDATE_COUNT):
-            r = self.call_agent(self.problem_solver_session(), problem)
+            r = self.call_agent(self.problem_solver_session, problem)
             solutions.append(r)
             finals.append(self.extract_final(r))
             logging.info(f"[atomic] candidate {k + 1}: {finals[-1]}")
@@ -303,7 +301,7 @@ class NeuroSanSolver(Solver):
         votes = [0] * len(finals)
         winner_idx = None
         for _ in range(NUMBER_OF_VOTES):
-            vresp = self.call_agent(self.composition_discriminator_session(), f"{numbered}\n\n")
+            vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
             vote_txt = self.extract_final(vresp)
             logging.info(f"[atomic] solution vote: {vote_txt}")
             try:
@@ -335,7 +333,7 @@ class NeuroSanSolver(Solver):
         """
         candidates: list[str] = []
         for _ in range(CANDIDATE_COUNT):
-            resp = self.call_agent(self.decomposer_session(), problem)
+            resp = self.call_agent(self.decomposer_session, problem)
             cand = self._extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
@@ -354,7 +352,7 @@ class NeuroSanSolver(Solver):
         winner_idx = None
         for _ in range(NUMBER_OF_VOTES):
             disc_prompt = f"{numbered}\n\n"
-            vresp = self.call_agent(self.solution_discriminator_session(), disc_prompt)
+            vresp = self.call_agent(self.solution_discriminator_session, disc_prompt)
             vote_txt = self.extract_final(vresp)
             logging.info(f"[decompose] discriminator raw vote: {vote_txt}")
             try:
