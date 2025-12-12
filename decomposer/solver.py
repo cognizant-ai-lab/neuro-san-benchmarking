@@ -14,6 +14,8 @@
 #
 # END COPYRIGHT
 
+from typing import Any
+
 import os
 
 
@@ -24,16 +26,11 @@ class Solver:
     # agents end their final answer on the last line after this token
     FINAL_TOKEN: str = os.getenv("FINAL_TOKEN", "vote:")
 
-    def extract_final(self, text: str, token: str = FINAL_TOKEN) -> str:
-        """
-        Return the text after the last occurrence of token (case-insensitive),
-        or the last non-empty line if not found. Preserves original casing.
-        """
-        raise NotImplementedError
-
-    def solve_trace(self, problem: str, depth: int, max_depth: int, path: str) -> tuple[str, dict]:
+    def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
         """
         Internal recursive solver that returns (response, trace_node).
         Builds a complete trace tree of the decomposition process.
+
+        :return: The root trace node of the decomposition process
         """
         raise NotImplementedError
