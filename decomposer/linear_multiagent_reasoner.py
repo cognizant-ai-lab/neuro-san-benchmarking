@@ -86,8 +86,13 @@ def call_agent(agent_session: AgentSession, text: str, timeout_ms: float = 10000
 
 
 def _extract_final(text: str, token: str = FINAL_TOKEN) -> str:
-    """Return the text after the last occurrence of FINAL_TOKEN (case-insensitive),
-    or last non-empty line if not found."""
+    """
+    Return the text after the last occurrence of FINAL_TOKEN (case-insensitive),
+    or last non-empty line if not found.
+
+    DEF: Could we use SolverParsing.extract_final() instead?
+        These things seem awfully similar.
+    """
     if not text:
         return ""
     token_low = token.lower()
