@@ -335,12 +335,7 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
     return resp, extracted_final
 
 
-def main():
-    problem = sys.stdin.read().strip()
-    if not problem:
-        print("[ERROR] No input provided.", file=sys.stderr)
-        sys.exit(1)
-
+def reason(problem: str) -> str:
     if LOG_FAILURES_JSONL:
         log_dir = Path(LOG_FAILURES_JSONL).parent
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -432,6 +427,16 @@ def main():
         else:
             logging.info(f"[main] Correct answer; not logging to {LOG_FAILURES_JSONL}")
 
+    return final_resp
+
+
+def main():
+    problem = sys.stdin.read().strip()
+    if not problem:
+        print("[ERROR] No input provided.", file=sys.stderr)
+        sys.exit(1)
+
+    final_resp: str = reason(problem)
     print(final_resp)
 
 
