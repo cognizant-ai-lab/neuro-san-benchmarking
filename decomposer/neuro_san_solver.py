@@ -63,7 +63,7 @@ class NeuroSanSolver(Solver):
         self.solution_discriminator_session: AgentSession = SessionManager.get_session("solution_discriminator")
         self.parsing = SolverParsing()
 
-    def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
+    def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
         Internal recursive solver that returns (response, trace_node).
         Builds a complete trace tree of the decomposition process.
