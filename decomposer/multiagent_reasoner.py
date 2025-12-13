@@ -28,35 +28,40 @@ from pathlib import Path
 from decomposer.neuro_san_solver import NeuroSanSolver
 from decomposer.solver import Solver
 
-
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-
-logging.basicConfig(level=LOG_LEVEL, format="[%(levelname)s] %(message)s", stream=sys.stderr)
-logger = logging.getLogger()
-
-LOG_DIR = os.getenv("LOG_DIR")
-if LOG_DIR:
-    Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
-    log_file = Path(LOG_DIR) / f"mr_{os.getpid()}_{threading.get_ident()}_{int(time.time())}.log"
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(LOG_LEVEL)
-    file_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-    logger.addHandler(file_handler)
-    logging.info(f"Logging to {log_file}")
-
-os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
-os.environ["AGENT_TOOL_PATH"] = "coded_tools"
-
 # Tuning knobs with environment variable overrides
-MAX_DEPTH = int(os.getenv("MAX_DEPTH", "5"))
-WINNING_VOTE_COUNT = int(os.getenv("WINNING_VOTE_COUNT", "2"))
-CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
-NUMBER_OF_VOTES = (2 * WINNING_VOTE_COUNT) - 1
-SOLUTION_CANDIDATE_COUNT = (2 * WINNING_VOTE_COUNT) - 1
+MAX_DEPTH: int = int(os.getenv("MAX_DEPTH", "5"))
+WINNING_VOTE_COUNT: int = int(os.getenv("WINNING_VOTE_COUNT", "2"))
+CANDIDATE_COUNT: int = (2 * WINNING_VOTE_COUNT) - 1
+NUMBER_OF_VOTES: int = (2 * WINNING_VOTE_COUNT) - 1
+SOLUTION_CANDIDATE_COUNT: int = (2 * WINNING_VOTE_COUNT) - 1
 
-LOG_FAILURES_JSONL = os.getenv("LOG_FAILURES_JSONL")
+LOG_FAILURES_JSONL: str = os.getenv("LOG_FAILURES_JSONL")
 
-_trace_data = threading.local()
+# Has 3 loosey-goosey fields: tree, decomposition, solve
+_trace_data: Any = threading.local()
+
+
+def setup() -> str:
+    log_level: str = os.getenv("LOG_LEVEL", "INFO").upper()
+
+    logging.basicConfig(level=log_level, format="[%(levelname)s] %(message)s", stream=sys.stderr)
+    logger = logging.getLogger()
+
+    log_file: str = None
+    log_dir: str = os.getenv("LOG_DIR")
+    if log_dir:
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
+        log_file: str = Path(log_dir) / f"mr_{os.getpid()}_{threading.get_ident()}_{int(time.time())}.log"
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+        logger.addHandler(file_handler)
+        logging.info(f"Logging to {log_file}")
+
+    os.environ["AGENT_MANIFEST_FILE"] = "./registries/manifest.hocon"
+    os.environ["AGENT_TOOL_PATH"] = "coded_tools"
+
+    return log_file
 
 
 def _parse_number(text: str) -> int | None:
@@ -302,7 +307,7 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
     :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
               and the extracted final answer from that line
     """
-    solver: Solver = NeuroSanSolver()
+    solver: Solver = NeuroSanSolver(winning_vote_count=WINNING_VOTE_COUNT)
     node: dict[str, Any] = solver.solve(problem, depth, max_depth, "0")
 
     _trace_data.tree = node
@@ -336,6 +341,7 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
 
 
 def reason(problem: str) -> str:
+    log_file: str = setup()
     if LOG_FAILURES_JSONL:
         log_dir = Path(LOG_FAILURES_JSONL).parent
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -415,7 +421,8 @@ def reason(problem: str) -> str:
                 },
             }
 
-            if LOG_DIR:
+            log_dir: str = os.getenv("LOG_DIR")
+            if log_dir:
                 failure_record["log_file"] = str(log_file) if "log_file" in locals() else None
 
             try:

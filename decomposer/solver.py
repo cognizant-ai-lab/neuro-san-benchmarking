@@ -16,15 +16,11 @@
 
 from typing import Any
 
-import os
-
 
 class Solver:
     """
     Interface for a generic solver.
     """
-    # agents end their final answer on the last line after this token
-    FINAL_TOKEN: str = os.getenv("FINAL_TOKEN", "vote:")
 
     def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
         """
