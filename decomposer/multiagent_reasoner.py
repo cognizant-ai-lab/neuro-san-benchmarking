@@ -14,6 +14,8 @@
 #
 # END COPYRIGHT
 
+from typing import Any
+
 import json
 import logging
 import os
@@ -294,12 +296,14 @@ def _find_failure_node(node: dict) -> tuple[str, dict] | None:
     return None
 
 
-def solve(solver: Solver, problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> str:
+def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str, str]:
     """
     Recursive solver with tree tracing.
-    Returns the final agent response (which includes the {FINAL_TOKEN} line).
+    :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
+              and the extracted final answer from that line
     """
-    resp, node = solver.solve_trace(problem, depth, max_depth, "0")
+    solver: Solver = NeuroSanSolver()
+    node: dict[str, Any] = solver.solve(problem, depth, max_depth, "0")
 
     _trace_data.tree = node
 
@@ -326,15 +330,12 @@ def solve(solver: Solver, problem: str, depth: int = 0, max_depth: int = MAX_DEP
                 "composition_winner_idx": composition["composition_winner_idx"],
             }
 
-    return resp
+    resp: str = node["response"]
+    extracted_final: str = node["extracted_final"]
+    return resp, extracted_final
 
 
-def main():
-    problem = sys.stdin.read().strip()
-    if not problem:
-        print("[ERROR] No input provided.", file=sys.stderr)
-        sys.exit(1)
-
+def reason(problem: str) -> str:
     if LOG_FAILURES_JSONL:
         log_dir = Path(LOG_FAILURES_JSONL).parent
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -344,10 +345,8 @@ def main():
     _trace_data.decomposition = None
     _trace_data.solve = None
 
-    solver: Solver = NeuroSanSolver()
-    final_resp = solve(solver, problem, depth=0, max_depth=MAX_DEPTH)
+    final_resp, extracted_final = solve(problem, depth=0, max_depth=MAX_DEPTH)
 
-    extracted_final = solver.extract_final(final_resp)
     logging.info(f"[main] final answer: {extracted_final!r}")
 
     a, b = _extract_multiplication_problem(problem)
@@ -428,6 +427,16 @@ def main():
         else:
             logging.info(f"[main] Correct answer; not logging to {LOG_FAILURES_JSONL}")
 
+    return final_resp
+
+
+def main():
+    problem = sys.stdin.read().strip()
+    if not problem:
+        print("[ERROR] No input provided.", file=sys.stderr)
+        sys.exit(1)
+
+    final_resp: str = reason(problem)
     print(final_resp)
 
 

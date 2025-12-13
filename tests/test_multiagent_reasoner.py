@@ -1,3 +1,4 @@
+
 # Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +14,21 @@
 # limitations under the License.
 #
 # END COPYRIGHT
+from unittest import TestCase
 
-from typing import Any
-
-import os
+from decomposer.multiagent_reasoner import reason
 
 
-class Solver:
+class TestMultiAgentReasoner(TestCase):
     """
-    Interface for a generic solver.
+    Tests multi-agent reasoner
     """
-    # agents end their final answer on the last line after this token
-    FINAL_TOKEN: str = os.getenv("FINAL_TOKEN", "vote:")
 
-    def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
+    def test_reasoner(self):
         """
-        Internal recursive solver that returns (response, trace_node).
-        Builds a complete trace tree of the decomposition process.
-
-        :return: The root trace node of the decomposition process
+        Tests the reasoner() method of multiagent_reasoner
         """
-        raise NotImplementedError
+        problem: str = "What is 46048 x 42098?"
+        answer: str = reason(problem)
+        expected: str = "1938528704"
+        self.assertIn(expected, answer)
