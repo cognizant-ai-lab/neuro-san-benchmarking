@@ -90,6 +90,7 @@ class NeuroSanSolver(Solver):
         if depth >= max_depth:
             logging.info(f"[solve] depth={depth} -> atomic (max depth)")
             resp, finals, votes, winner_idx, solutions = self._solve_atomic_with_voting(problem)
+            _ = solutions
             node["response"] = resp
             node["final"] = finals[winner_idx]
             node["atomic"] = {
@@ -103,8 +104,9 @@ class NeuroSanSolver(Solver):
 
         p1, p2, c, decomp_meta = self.decompose(problem)
 
+        source: str = f"[solve] depth={depth}"
         if not p1 or not p2 or not c:
-            logging.info(f"[solve] depth={depth} -> atomic (no decomp)")
+            logging.info(f"{source} -> atomic (no decomp)")
             if decomp_meta:
                 node["decomposition"] = {**decomp_meta, "decision": "no_decomposition"}
             resp, finals, votes, winner_idx, solutions = self._solve_atomic_with_voting(problem)
@@ -119,7 +121,7 @@ class NeuroSanSolver(Solver):
             node["extracted_final"] = self.parsing.extract_final(resp)
             return node
 
-        logging.info(f"[solve] depth={depth} using decomposition")
+        logging.info(f"{source} using decomposition")
         node["decomposition"] = decomp_meta
 
         s1_node = self.solve(p1, depth + 1, max_depth, f"{path}.0")
@@ -130,46 +132,13 @@ class NeuroSanSolver(Solver):
         s2: str = s2_node.get("extracted_final")
         node["sub_finals"] = {"s1_final": s1, "s2_final": s2}
 
-        logging.info(f"[solve] depth={depth} sub-answers -> s1_final={s1!r}, s2_final={s2!r}")
+        logging.info(f"{source} sub-answers -> s1_final={s1!r}, s2_final={s2!r}")
 
         comp_prompt = self._compose_prompt(c, s1, s2)
-        logging.info(f"[solve] depth={depth} composing with C={c!r}")
+        logging.info(f"{source} composing with C={c!r}")
 
-        solutions: list[str] = []
-        finals: list[str] = []
-        for k in range(self.solution_candidate_count):
-            r = self.call_agent(self.problem_solver_session, comp_prompt)
-            solutions.append(r)
-            finals.append(self.parsing.extract_final(r))
-            logging.info(f"[solve] depth={depth} composed candidate {k + 1}: {finals[-1]}")
+        resp, finals, votes, winner_idx, solutions = self._solve_generic(comp_prompt, source)
 
-        numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
-        numbered = f"problem: {comp_prompt}, {numbered}"
-        logging.info(f"[solve] depth={depth} composition_discriminator query: {numbered}")
-        votes = [0] * len(finals)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"[solve] depth={depth} solution vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(finals):
-                    logging.error(f"Invalid solution index: {idx}")
-                if 0 <= idx < len(finals):
-                    votes[idx] += 1
-                    logging.info(f"[solve] depth={depth} tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"[solve] depth={depth} early solution winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"[solve] depth={depth} malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda i: votes[i])
-
-        resp = solutions[winner_idx]
         node["response"] = resp
         node["final"] = finals[winner_idx]
         node["composition"] = {
@@ -180,8 +149,6 @@ class NeuroSanSolver(Solver):
             "final_choice": finals[winner_idx],
         }
         node["extracted_final"] = self.parsing.extract_final(resp)
-
-        logging.info(f"[solve] depth={depth} composed final (chosen): {finals[winner_idx]!r}")
 
         return node
 
@@ -227,41 +194,48 @@ class NeuroSanSolver(Solver):
         Generate multiple atomic solutions and vote on them.
         Returns (chosen_response, finals, votes, winner_idx, solutions).
         """
+        return self._solve_generic(problem, "[atomic]")
+
+    def _solve_generic(self, problem: str, source: str) -> tuple[str, list[str], list[int], int, list[str]]:
+        """
+        Generate multiple atomic solutions and vote on them.
+        Returns (chosen_response, finals, votes, winner_idx, solutions).
+        """
         solutions: list[str] = []
         finals: list[str] = []
         for k in range(self.solution_candidate_count):
             r = self.call_agent(self.problem_solver_session, problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
-            logging.info(f"[atomic] candidate {k + 1}: {finals[-1]}")
+            logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
         numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
         numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"[atomic] composition_discriminator query: {numbered}")
+        logging.info(f"{source} composition_discriminator query: {numbered}")
         votes = [0] * len(finals)
         winner_idx = None
         for _ in range(self.number_of_votes):
             vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
             vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"[atomic] solution vote: {vote_txt}")
+            logging.info(f"{source} solution vote: {vote_txt}")
             try:
                 idx = int(vote_txt) - 1
                 if idx >= len(finals):
                     logging.error(f"Invalid solution index: {idx}")
                 if 0 <= idx < len(finals):
                     votes[idx] += 1
-                    logging.info(f"[atomic] tally: {votes}")
+                    logging.info(f"{source} tally: {votes}")
                     if votes[idx] >= self.winning_vote_count:
                         winner_idx = idx
-                        logging.info(f"[atomic] early solution winner: {winner_idx + 1}")
+                        logging.info(f"{source} early solution winner: {winner_idx + 1}")
                         break
             except ValueError:
-                logging.warning(f"[atomic] malformed vote ignored: {vote_txt!r}")
+                logging.warning(f"{source} malformed vote ignored: {vote_txt!r}")
 
         if winner_idx is None:
             winner_idx = max(range(len(votes)), key=lambda i: votes[i])
 
-        logging.info(f"[atomic] final (chosen): {finals[winner_idx]!r}")
+        logging.info(f"{source} final (chosen): {finals[winner_idx]!r}")
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
 
