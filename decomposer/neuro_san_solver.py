@@ -193,7 +193,7 @@ class NeuroSanSolver(Solver):
         """
         Call a single agent with given text, return its response.
         """
-        thread = {
+        chat_state: dict[str, Any] = {
             "last_chat_response": None,
             "prompt": "",
             "timeout": timeout_ms,
@@ -203,9 +203,9 @@ class NeuroSanSolver(Solver):
             "chat_filter": {"chat_filter_type": "MAXIMAL"},
         }
         inp = StreamingInputProcessor("DEFAULT", self._tmpfile("program_mode_thinking"), agent_session, None)
-        thread = inp.process_once(thread)
+        chat_state = inp.process_once(chat_state)
         logging.debug(f"call_agent({agent_session}): sending {len(text)} chars")
-        resp = thread.get("last_chat_response") or ""
+        resp = chat_state.get("last_chat_response") or ""
         logging.debug(f"call_agent({agent_session}): received {len(resp)} chars")
         return resp
 
