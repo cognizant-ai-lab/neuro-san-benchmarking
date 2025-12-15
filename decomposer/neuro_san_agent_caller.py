@@ -17,8 +17,8 @@
 from typing import Any
 
 import logging
-import os
-import threading
+from os import getpid
+from threading import get_ident
 
 from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
@@ -79,7 +79,7 @@ class NeuroSanAgentCaller(AgentCaller):
         chat_state = inp.process_once(chat_state)
 
         # Parse the response
-        resp = chat_state.get("last_chat_response") or ""
+        resp: str = chat_state.get("last_chat_response") or ""
         logging.debug(f"call_agent({use_name}): received {len(resp)} chars")
         if self.solver_parsing is not None:
             resp = self.solver_parsing.extract_final(resp)
@@ -88,4 +88,4 @@ class NeuroSanAgentCaller(AgentCaller):
 
     # Unique temp file per *call*
     def _tmpfile(self, stem: str) -> str:
-        return f"/tmp/{stem}_{os.getpid()}_{threading.get_ident()}.txt"
+        return f"/tmp/{stem}_{getpid()}_{get_ident()}.txt"
