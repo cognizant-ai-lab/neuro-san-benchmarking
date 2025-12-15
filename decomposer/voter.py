@@ -14,19 +14,18 @@
 #
 # END COPYRIGHT
 
-from typing import Any
 
-
-class Solver:
+class Voter:
     """
-    Interface for a generic solver.
+    Generic voter interface
     """
 
-    def solve(self, problem: str, depth: int, max_depth: int, path: str) -> dict[str, Any]:
+    def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
         """
-        Internal recursive solver that returns (response, trace_node).
-        Builds a complete trace tree of the decomposition process.
+        Generic voting interface
 
-        :return: The root trace node of the decomposition process
+        :param problem: The problem to be solved
+        :param candidates: The candidate solutions
+        :return: A tuple of (list of number of votes per candidate, winner index)
         """
         raise NotImplementedError

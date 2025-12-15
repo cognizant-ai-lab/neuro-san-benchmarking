@@ -26,7 +26,6 @@ import time
 from pathlib import Path
 
 from decomposer.neuro_san_solver import NeuroSanSolver
-from decomposer.solver import Solver
 
 # Tuning knobs with environment variable overrides
 MAX_DEPTH: int = int(os.getenv("MAX_DEPTH", "5"))
@@ -307,7 +306,7 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
     :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
               and the extracted final answer from that line
     """
-    solver: Solver = NeuroSanSolver(winning_vote_count=WINNING_VOTE_COUNT)
+    solver = NeuroSanSolver(winning_vote_count=WINNING_VOTE_COUNT)
     node: dict[str, Any] = solver.solve(problem, depth, max_depth, "0")
 
     _trace_data.tree = node

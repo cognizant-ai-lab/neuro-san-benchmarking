@@ -17,18 +17,18 @@
 from typing import Any
 
 import logging
-import os
-import threading
 
 from neuro_san.client.agent_session_factory import AgentSession
-from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
+from decomposer.agent_caller import AgentCaller
+from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
+from decomposer.first_to_k_voter import FirstToKVoter
 from decomposer.session_manager import SessionManager
-from decomposer.solver import Solver
 from decomposer.solver_parsing import SolverParsing
+from decomposer.voter import Voter
 
 
-class NeuroSanSolver(Solver):
+class NeuroSanSolver:
     """
     Generic solver implementation that uses Neuro SAN.
     """
@@ -56,12 +56,21 @@ class NeuroSanSolver(Solver):
         if self.solution_candidate_count is None:
             self.solution_candidate_count = default_count
 
-        # Initialize the Neuro SAN agent sessions
-        self.composition_discriminator_session: AgentSession = SessionManager.get_session("composition_discriminator")
-        self.decomposer_session: AgentSession = SessionManager.get_session("decomposer")
-        self.problem_solver_session: AgentSession = SessionManager.get_session("problem_solver")
-        self.solution_discriminator_session: AgentSession = SessionManager.get_session("solution_discriminator")
+        session: AgentSession = None
         self.parsing = SolverParsing()
+
+        # Initialize the Neuro SAN agent session callers
+        session = SessionManager.get_session("composition_discriminator")
+        self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+
+        session = SessionManager.get_session("decomposer")
+        self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        session = SessionManager.get_session("problem_solver")
+        self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        session = SessionManager.get_session("solution_discriminator")
+        self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
 
     def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
@@ -152,30 +161,6 @@ class NeuroSanSolver(Solver):
 
         return node
 
-    # Unique temp file per *call*
-    def _tmpfile(self, stem: str) -> str:
-        return f"/tmp/{stem}_{os.getpid()}_{threading.get_ident()}.txt"
-
-    def call_agent(self, agent_session: AgentSession, text: str, timeout_ms: float = 100000.0) -> str:
-        """
-        Call a single agent with given text, return its response.
-        """
-        chat_state: dict[str, Any] = {
-            "last_chat_response": None,
-            "prompt": "",
-            "timeout": timeout_ms,
-            "num_input": 0,
-            "user_input": text,
-            "sly_data": None,
-            "chat_filter": {"chat_filter_type": "MAXIMAL"},
-        }
-        inp = StreamingInputProcessor("DEFAULT", self._tmpfile("program_mode_thinking"), agent_session, None)
-        chat_state = inp.process_once(chat_state)
-        logging.debug(f"call_agent({agent_session}): sending {len(text)} chars")
-        resp = chat_state.get("last_chat_response") or ""
-        logging.debug(f"call_agent({agent_session}): received {len(resp)} chars")
-        return resp
-
     def _compose_prompt(self, c: str, s1: str, s2: str) -> str:
         """
         Build a prompt for the final composition solve: C(s1, s2).
@@ -187,7 +172,7 @@ class NeuroSanSolver(Solver):
         """
         Single call to problem_solver; returns the full agent response.
         """
-        return self.call_agent(self.problem_solver_session, problem)
+        return self.problem_solver_caller.call_agent(problem)
 
     def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
@@ -204,38 +189,14 @@ class NeuroSanSolver(Solver):
         solutions: list[str] = []
         finals: list[str] = []
         for k in range(self.solution_candidate_count):
-            r = self.call_agent(self.problem_solver_session, problem)
+            r: str = self.problem_solver_caller.call_agent(problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
-        numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"{source} composition_discriminator query: {numbered}")
-        votes = [0] * len(finals)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"{source} solution vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(finals):
-                    logging.error(f"Invalid solution index: {idx}")
-                if 0 <= idx < len(finals):
-                    votes[idx] += 1
-                    logging.info(f"{source} tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"{source} early solution winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"{source} malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda i: votes[i])
-
-        logging.info(f"{source} final (chosen): {finals[winner_idx]!r}")
+        voter: Voter = FirstToKVoter(source, "composition", self.composition_discriminator_caller,
+                                     self.number_of_votes, self.winning_vote_count)
+        votes, winner_idx = voter.vote(problem, finals)
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
 
@@ -247,46 +208,20 @@ class NeuroSanSolver(Solver):
         """
         candidates: list[str] = []
         for _ in range(self.candidate_count):
-            resp = self.call_agent(self.decomposer_session, problem)
-            cand = self.parsing.extract_decomposition_text(resp)
+            resp: str = self.decomposer_caller.call_agent(problem)
+            cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
 
-        for i, c in enumerate(candidates, 1):
-            logging.info(f"[decompose] candidate {i}: {c}")
+        for i, candidate in enumerate(candidates, 1):
+            logging.info(f"[decompose] candidate {i}: {candidate}")
 
         if not candidates:
             return None, None, None, {}
 
-        numbered = "\n".join(f"{i+1}. {c}" for i, c in enumerate(candidates))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"[decompose] solution_discriminator query: {numbered}")
-
-        votes = [0] * len(candidates)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            disc_prompt = f"{numbered}\n\n"
-            vresp = self.call_agent(self.solution_discriminator_session, disc_prompt)
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"[decompose] discriminator raw vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(candidates):
-                    logging.error(f"Invalid vote index: {idx}")
-                if 0 <= idx < len(candidates):
-                    votes[idx] += 1
-                    logging.info(f"[decompose] tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"[decompose] early winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"[decompose] malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda v: votes[v])
-
-        logging.info(f"[decompose] final winner: {winner_idx + 1} -> {candidates[winner_idx]}")
+        voter: Voter = FirstToKVoter("[decompose]", "solution", self.solution_discriminator_caller,
+                                     self.number_of_votes, self.winning_vote_count)
+        votes, winner_idx = voter.vote(problem, candidates)
 
         p1, p2, c = self.parsing.parse_decomposition(candidates[winner_idx])
 
