@@ -24,12 +24,11 @@ from decomposer.agent_caller import AgentCaller
 from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
 from decomposer.first_to_k_voter import FirstToKVoter
 from decomposer.session_manager import SessionManager
-from decomposer.solver import Solver
 from decomposer.solver_parsing import SolverParsing
 from decomposer.voter import Voter
 
 
-class NeuroSanSolver(Solver):
+class NeuroSanSolver:
     """
     Generic solver implementation that uses Neuro SAN.
     """
