@@ -209,33 +209,8 @@ class NeuroSanSolver(Solver):
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
-        numbered = "\n".join(f"{i + 1}. {ans}" for i, ans in enumerate(finals))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"{source} composition_discriminator query: {numbered}")
-        votes = [0] * len(finals)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            vresp = self.call_agent(self.composition_discriminator_session, f"{numbered}\n\n")
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"{source} solution vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(finals):
-                    logging.error(f"Invalid solution index: {idx}")
-                if 0 <= idx < len(finals):
-                    votes[idx] += 1
-                    logging.info(f"{source} tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"{source} early solution winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"{source} malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda i: votes[i])
-
-        logging.info(f"{source} final (chosen): {finals[winner_idx]!r}")
+        votes, winner_idx = self.vote(problem, finals, self.composition_discriminator_session,
+                                      source, discriminator_name="composition")
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
 
@@ -258,35 +233,8 @@ class NeuroSanSolver(Solver):
         if not candidates:
             return None, None, None, {}
 
-        numbered = "\n".join(f"{i+1}. {c}" for i, c in enumerate(candidates))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"[decompose] solution_discriminator query: {numbered}")
-
-        votes = [0] * len(candidates)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            disc_prompt = f"{numbered}\n\n"
-            vresp = self.call_agent(self.solution_discriminator_session, disc_prompt)
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"[decompose] discriminator raw vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(candidates):
-                    logging.error(f"Invalid vote index: {idx}")
-                if 0 <= idx < len(candidates):
-                    votes[idx] += 1
-                    logging.info(f"[decompose] tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"[decompose] early winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"[decompose] malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda v: votes[v])
-
-        logging.info(f"[decompose] final winner: {winner_idx + 1} -> {candidates[winner_idx]}")
+        votes, winner_idx = self.vote(problem, candidates, self.solution_discriminator_session,
+                                      source="[decompose]", discriminator_name="solution")
 
         p1, p2, c = self.parsing.parse_decomposition(candidates[winner_idx])
 
@@ -301,3 +249,38 @@ class NeuroSanSolver(Solver):
         }
 
         return p1, p2, c, metadata
+
+    def vote(self, problem: str, candidates: list[str], agent_session: AgentSession,
+             source: str, discriminator_name: str) -> tuple[str, str, str, dict]:
+
+        numbered = "\n".join(f"{i+1}. {c}" for i, c in enumerate(candidates))
+        numbered = f"problem: {problem}, {numbered}"
+        logging.info(f"{source} {discriminator_name} discriminator query: {numbered}")
+
+        votes = [0] * len(candidates)
+        winner_idx = None
+        for _ in range(self.number_of_votes):
+            disc_prompt = f"{numbered}\n\n"
+            vresp = self.call_agent(agent_session, disc_prompt)
+            vote_txt = self.parsing.extract_final(vresp)
+            logging.info(f"{source} raw vote: {vote_txt}")
+            try:
+                idx = int(vote_txt) - 1
+                if idx >= len(candidates):
+                    logging.error(f"Invalid vote index: {idx}")
+                if 0 <= idx < len(candidates):
+                    votes[idx] += 1
+                    logging.info(f"{source} tally: {votes}")
+                    if votes[idx] >= self.winning_vote_count:
+                        winner_idx = idx
+                        logging.info(f"{source} early winner: {winner_idx + 1}")
+                        break
+            except ValueError:
+                logging.warning(f"{source} malformed vote ignored: {vote_txt!r}")
+
+        if winner_idx is None:
+            winner_idx = max(range(len(votes)), key=lambda v: votes[v])
+
+        logging.info(f"{source} final winner: {winner_idx + 1} -> {candidates[winner_idx]!r}")
+
+        return votes, winner_idx
