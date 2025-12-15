@@ -22,7 +22,7 @@ from neuro_san.client.agent_session_factory import AgentSession
 
 from decomposer.agent_caller import AgentCaller
 from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
-from decomposer.neuro_san_voter import NeuroSanVoter
+from decomposer.first_to_k_voter import FirstToKVoter
 from decomposer.session_manager import SessionManager
 from decomposer.solver import Solver
 from decomposer.solver_parsing import SolverParsing
@@ -189,7 +189,7 @@ class NeuroSanSolver(Solver):
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
         caller: AgentCaller = NeuroSanAgentCaller(self.composition_discriminator_session, self.parsing)
-        voter: Voter = NeuroSanVoter(source, "composition", caller, self.number_of_votes, self.winning_vote_count)
+        voter: Voter = FirstToKVoter(source, "composition", caller, self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = voter.vote(problem, finals)
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
@@ -215,7 +215,7 @@ class NeuroSanSolver(Solver):
             return None, None, None, {}
 
         caller: AgentCaller = NeuroSanAgentCaller(self.solution_discriminator_session, self.parsing)
-        voter: Voter = NeuroSanVoter("[decompose]", "solution", caller,
+        voter: Voter = FirstToKVoter("[decompose]", "solution", caller,
                                      self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = voter.vote(problem, candidates)
 

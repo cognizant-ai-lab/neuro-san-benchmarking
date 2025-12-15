@@ -20,9 +20,10 @@ from decomposer.agent_caller import AgentCaller
 from decomposer.voter import Voter
 
 
-class NeuroSanVoter(Voter):
+class FirstToKVoter(Voter):
     """
-    Generic Voter implementation that uses Neuro SAN.
+    Generic Voter implementation that returns the first solution that receives
+    a certain number of votes (K).
     """
 
     def __init__(self, source: str,
