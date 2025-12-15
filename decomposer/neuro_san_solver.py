@@ -56,12 +56,21 @@ class NeuroSanSolver:
         if self.solution_candidate_count is None:
             self.solution_candidate_count = default_count
 
-        # Initialize the Neuro SAN agent sessions
-        self.composition_discriminator_session: AgentSession = SessionManager.get_session("composition_discriminator")
-        self.decomposer_session: AgentSession = SessionManager.get_session("decomposer")
-        self.problem_solver_session: AgentSession = SessionManager.get_session("problem_solver")
-        self.solution_discriminator_session: AgentSession = SessionManager.get_session("solution_discriminator")
+        session: AgentSession = None
         self.parsing = SolverParsing()
+
+        # Initialize the Neuro SAN agent session callers
+        session = SessionManager.get_session("composition_discriminator")
+        self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+
+        session = SessionManager.get_session("decomposer")
+        self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        session = SessionManager.get_session("problem_solver")
+        self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        session = SessionManager.get_session("solution_discriminator")
+        self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
 
     def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
@@ -163,8 +172,7 @@ class NeuroSanSolver:
         """
         Single call to problem_solver; returns the full agent response.
         """
-        caller: AgentCaller = NeuroSanAgentCaller(self.problem_solver_session)
-        return caller.call_agent(problem)
+        return self.problem_solver_caller.call_agent(problem)
 
     def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
@@ -180,15 +188,14 @@ class NeuroSanSolver:
         """
         solutions: list[str] = []
         finals: list[str] = []
-        caller: AgentCaller = NeuroSanAgentCaller(self.problem_solver_session)
         for k in range(self.solution_candidate_count):
-            r: str = caller.call_agent(problem)
+            r: str = self.problem_solver_caller.call_agent(problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
-        caller: AgentCaller = NeuroSanAgentCaller(self.composition_discriminator_session, self.parsing)
-        voter: Voter = FirstToKVoter(source, "composition", caller, self.number_of_votes, self.winning_vote_count)
+        voter: Voter = FirstToKVoter(source, "composition", self.composition_discriminator_caller,
+                                     self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = voter.vote(problem, finals)
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
@@ -200,9 +207,8 @@ class NeuroSanSolver:
         Returns (p1, p2, c, metadata_dict).
         """
         candidates: list[str] = []
-        caller: AgentCaller = NeuroSanAgentCaller(self.decomposer_session)
         for _ in range(self.candidate_count):
-            resp: str = caller.call_agent(problem)
+            resp: str = self.decomposer_caller.call_agent(problem)
             cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
@@ -213,8 +219,7 @@ class NeuroSanSolver:
         if not candidates:
             return None, None, None, {}
 
-        caller: AgentCaller = NeuroSanAgentCaller(self.solution_discriminator_session, self.parsing)
-        voter: Voter = FirstToKVoter("[decompose]", "solution", caller,
+        voter: Voter = FirstToKVoter("[decompose]", "solution", self.solution_discriminator_caller,
                                      self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = voter.vote(problem, candidates)
 
