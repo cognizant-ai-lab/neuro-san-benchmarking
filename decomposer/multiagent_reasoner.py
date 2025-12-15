@@ -365,75 +365,79 @@ def reason(problem: str) -> str:
         logging.info(f"[main] Checking: expected={expected}, actual={actual}")
 
         if actual != expected:
-            trace_tree = getattr(_trace_data, "tree", None)
-
-            if trace_tree:
-                _annotate_failure(trace_tree, expected)
-                trace_flat = _flatten_tree(trace_tree)
-                failure_node_info = _find_failure_node(trace_tree)
-
-                if failure_node_info:
-                    failure_node_path, failure_node_error = failure_node_info
-                    logging.info(f"[main] Failure identified at path={failure_node_path}: {failure_node_error}")
-                else:
-                    failure_node_path = None
-                    failure_node_error = None
-            else:
-                trace_flat = []
-                failure_node_path = None
-                failure_node_error = None
-
-            trace = {
-                "decomposition": getattr(_trace_data, "decomposition", None),
-                "solve": getattr(_trace_data, "solve", None),
-            }
-
-            failure_patterns = _classify_failure(trace, expected, actual)
-
-            diff = None if actual is None else actual - expected
-            abs_diff = None if actual is None else abs(actual - expected)
-            rel_error = None if actual is None or expected == 0 else abs_diff / abs(expected)
-
-            failure_record = {
-                "problem": problem,
-                "expected": expected,
-                "actual": actual,
-                "extracted_final": extracted_final,
-                "final_resp": final_resp,
-                "failure_patterns": failure_patterns,
-                "error": {
-                    "diff": diff,
-                    "abs_diff": abs_diff,
-                    "relative_error": rel_error,
-                },
-                "trace": trace,
-                "trace_tree": trace_tree,
-                "trace_flat": trace_flat,
-                "failure_node_path": failure_node_path,
-                "failure_node_error": failure_node_error,
-                "config": {
-                    "WINNING_VOTE_COUNT": WINNING_VOTE_COUNT,
-                    "MAX_DEPTH": MAX_DEPTH,
-                    "CANDIDATE_COUNT": CANDIDATE_COUNT,
-                    "NUMBER_OF_VOTES": NUMBER_OF_VOTES,
-                    "SOLUTION_CANDIDATE_COUNT": SOLUTION_CANDIDATE_COUNT,
-                },
-            }
-
-            log_dir: str = os.getenv("LOG_DIR")
-            if log_dir:
-                failure_record["log_file"] = str(log_file) if "log_file" in locals() else None
-
-            try:
-                with open(LOG_FAILURES_JSONL, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(failure_record) + "\n")
-                logging.info(f"[main] Failure logged to {LOG_FAILURES_JSONL}")
-            except IOError as e:
-                logging.error(f"[main] Failed to write failure log: {e}")
+            report(problem, final_resp, extracted_final, expected, actual, log_file)
         else:
             logging.info(f"[main] Correct answer; not logging to {LOG_FAILURES_JSONL}")
 
     return final_resp
+
+
+def report(problem: str, final_resp: str, extracted_final: str, expected: int, actual: int, log_file: str):
+
+    trace_tree = getattr(_trace_data, "tree", None)
+    if trace_tree:
+        _annotate_failure(trace_tree, expected)
+        trace_flat = _flatten_tree(trace_tree)
+        failure_node_info = _find_failure_node(trace_tree)
+
+        if failure_node_info:
+            failure_node_path, failure_node_error = failure_node_info
+            logging.info(f"[main] Failure identified at path={failure_node_path}: {failure_node_error}")
+        else:
+            failure_node_path = None
+            failure_node_error = None
+    else:
+        trace_flat = []
+        failure_node_path = None
+        failure_node_error = None
+
+    trace = {
+        "decomposition": getattr(_trace_data, "decomposition", None),
+        "solve": getattr(_trace_data, "solve", None),
+    }
+
+    failure_patterns = _classify_failure(trace, expected, actual)
+
+    diff = None if actual is None else actual - expected
+    abs_diff = None if actual is None else abs(actual - expected)
+    rel_error = None if actual is None or expected == 0 else abs_diff / abs(expected)
+
+    failure_record = {
+        "problem": problem,
+        "expected": expected,
+        "actual": actual,
+        "extracted_final": extracted_final,
+        "final_resp": final_resp,
+        "failure_patterns": failure_patterns,
+        "error": {
+            "diff": diff,
+            "abs_diff": abs_diff,
+            "relative_error": rel_error,
+        },
+        "trace": trace,
+        "trace_tree": trace_tree,
+        "trace_flat": trace_flat,
+        "failure_node_path": failure_node_path,
+        "failure_node_error": failure_node_error,
+        "config": {
+            "WINNING_VOTE_COUNT": WINNING_VOTE_COUNT,
+            "MAX_DEPTH": MAX_DEPTH,
+            "CANDIDATE_COUNT": CANDIDATE_COUNT,
+            "NUMBER_OF_VOTES": NUMBER_OF_VOTES,
+            "SOLUTION_CANDIDATE_COUNT": SOLUTION_CANDIDATE_COUNT,
+        },
+    }
+
+    log_dir: str = os.getenv("LOG_DIR")
+    if log_dir:
+        failure_record["log_file"] = str(log_file) if "log_file" in locals() else None
+
+    try:
+        with open(LOG_FAILURES_JSONL, "a", encoding="utf-8") as f:
+            f.write(json.dumps(failure_record) + "\n")
+        logging.info(f"[main] Failure logged to {LOG_FAILURES_JSONL}")
+    except IOError as e:
+        logging.error(f"[main] Failed to write failure log: {e}")
 
 
 def main():
