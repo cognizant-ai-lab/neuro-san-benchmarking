@@ -17,15 +17,16 @@
 from typing import Any
 
 import logging
-import os
-import threading
 
 from neuro_san.client.agent_session_factory import AgentSession
-from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 
+from decomposer.agent_caller import AgentCaller
+from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
+from decomposer.neuro_san_voter import NeuroSanVoter
 from decomposer.session_manager import SessionManager
 from decomposer.solver import Solver
 from decomposer.solver_parsing import SolverParsing
+from decomposer.voter import Voter
 
 
 class NeuroSanSolver(Solver):
@@ -152,30 +153,6 @@ class NeuroSanSolver(Solver):
 
         return node
 
-    # Unique temp file per *call*
-    def _tmpfile(self, stem: str) -> str:
-        return f"/tmp/{stem}_{os.getpid()}_{threading.get_ident()}.txt"
-
-    def call_agent(self, agent_session: AgentSession, text: str, timeout_ms: float = 100000.0) -> str:
-        """
-        Call a single agent with given text, return its response.
-        """
-        chat_state: dict[str, Any] = {
-            "last_chat_response": None,
-            "prompt": "",
-            "timeout": timeout_ms,
-            "num_input": 0,
-            "user_input": text,
-            "sly_data": None,
-            "chat_filter": {"chat_filter_type": "MAXIMAL"},
-        }
-        inp = StreamingInputProcessor("DEFAULT", self._tmpfile("program_mode_thinking"), agent_session, None)
-        chat_state = inp.process_once(chat_state)
-        logging.debug(f"call_agent({agent_session}): sending {len(text)} chars")
-        resp = chat_state.get("last_chat_response") or ""
-        logging.debug(f"call_agent({agent_session}): received {len(resp)} chars")
-        return resp
-
     def _compose_prompt(self, c: str, s1: str, s2: str) -> str:
         """
         Build a prompt for the final composition solve: C(s1, s2).
@@ -187,7 +164,8 @@ class NeuroSanSolver(Solver):
         """
         Single call to problem_solver; returns the full agent response.
         """
-        return self.call_agent(self.problem_solver_session, problem)
+        caller: AgentCaller = NeuroSanAgentCaller(self.problem_solver_session)
+        return caller.call_agent(problem)
 
     def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
@@ -203,14 +181,16 @@ class NeuroSanSolver(Solver):
         """
         solutions: list[str] = []
         finals: list[str] = []
+        caller: AgentCaller = NeuroSanAgentCaller(self.problem_solver_session)
         for k in range(self.solution_candidate_count):
-            r = self.call_agent(self.problem_solver_session, problem)
+            r: str = caller.call_agent(problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
-        votes, winner_idx = self.vote(problem, finals, self.composition_discriminator_session,
-                                      source, discriminator_name="composition")
+        caller: AgentCaller = NeuroSanAgentCaller(self.composition_discriminator_session, self.parsing)
+        voter: Voter = NeuroSanVoter(source, "composition", caller, self.number_of_votes, self.winning_vote_count)
+        votes, winner_idx = voter.vote(problem, finals)
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
 
@@ -221,20 +201,23 @@ class NeuroSanSolver(Solver):
         Returns (p1, p2, c, metadata_dict).
         """
         candidates: list[str] = []
+        caller: AgentCaller = NeuroSanAgentCaller(self.decomposer_session)
         for _ in range(self.candidate_count):
-            resp = self.call_agent(self.decomposer_session, problem)
-            cand = self.parsing.extract_decomposition_text(resp)
+            resp: str = caller.call_agent(problem)
+            cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
 
-        for i, c in enumerate(candidates, 1):
-            logging.info(f"[decompose] candidate {i}: {c}")
+        for i, candidate in enumerate(candidates, 1):
+            logging.info(f"[decompose] candidate {i}: {candidate}")
 
         if not candidates:
             return None, None, None, {}
 
-        votes, winner_idx = self.vote(problem, candidates, self.solution_discriminator_session,
-                                      source="[decompose]", discriminator_name="solution")
+        caller: AgentCaller = NeuroSanAgentCaller(self.solution_discriminator_session, self.parsing)
+        voter: Voter = NeuroSanVoter("[decompose]", "solution", caller,
+                                     self.number_of_votes, self.winning_vote_count)
+        votes, winner_idx = voter.vote(problem, candidates)
 
         p1, p2, c = self.parsing.parse_decomposition(candidates[winner_idx])
 
@@ -249,38 +232,3 @@ class NeuroSanSolver(Solver):
         }
 
         return p1, p2, c, metadata
-
-    def vote(self, problem: str, candidates: list[str], agent_session: AgentSession,
-             source: str, discriminator_name: str) -> tuple[str, str, str, dict]:
-
-        numbered = "\n".join(f"{i+1}. {c}" for i, c in enumerate(candidates))
-        numbered = f"problem: {problem}, {numbered}"
-        logging.info(f"{source} {discriminator_name} discriminator query: {numbered}")
-
-        votes = [0] * len(candidates)
-        winner_idx = None
-        for _ in range(self.number_of_votes):
-            disc_prompt = f"{numbered}\n\n"
-            vresp = self.call_agent(agent_session, disc_prompt)
-            vote_txt = self.parsing.extract_final(vresp)
-            logging.info(f"{source} raw vote: {vote_txt}")
-            try:
-                idx = int(vote_txt) - 1
-                if idx >= len(candidates):
-                    logging.error(f"Invalid vote index: {idx}")
-                if 0 <= idx < len(candidates):
-                    votes[idx] += 1
-                    logging.info(f"{source} tally: {votes}")
-                    if votes[idx] >= self.winning_vote_count:
-                        winner_idx = idx
-                        logging.info(f"{source} early winner: {winner_idx + 1}")
-                        break
-            except ValueError:
-                logging.warning(f"{source} malformed vote ignored: {vote_txt!r}")
-
-        if winner_idx is None:
-            winner_idx = max(range(len(votes)), key=lambda v: votes[v])
-
-        logging.info(f"{source} final winner: {winner_idx + 1} -> {candidates[winner_idx]!r}")
-
-        return votes, winner_idx

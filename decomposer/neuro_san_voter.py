@@ -1,0 +1,80 @@
+# Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# END COPYRIGHT
+
+import logging
+
+from decomposer.agent_caller import AgentCaller
+from decomposer.voter import Voter
+
+
+class NeuroSanVoter(Voter):
+    """
+    Generic Voter implementation that uses Neuro SAN.
+    """
+
+    def __init__(self, source: str,
+                 discriminator_name: str,
+                 discriminator_caller: AgentCaller,
+                 number_of_votes: int = 3,
+                 winning_vote_count: int = 2):
+        """
+        Constructor.
+        """
+
+        self.source: str = source
+        self.discriminator_name: str = discriminator_name
+        self.discriminator_caller: AgentCaller = discriminator_caller
+        self.number_of_votes: int = number_of_votes
+        self.winning_vote_count: int = winning_vote_count
+
+    def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
+        """
+        Generic voting interface
+
+        :param problem: The problem to be solved
+        :param candidates: The candidate solutions
+        :return: A tuple of (list of number of votes per candidate, winner index)
+        """
+
+        numbered = "\n".join(f"{i+1}. {candidate}" for i, candidate in enumerate(candidates))
+        numbered = f"problem: {problem}, {numbered}"
+        logging.info(f"{self.source} {self.discriminator_name} discriminator query: {numbered}")
+
+        votes = [0] * len(candidates)
+        winner_idx = None
+        for _ in range(self.number_of_votes):
+            vote_txt: str = self.discriminator_caller.call_agent(f"{numbered}\n\n")
+            logging.info(f"{self.source} raw vote: {vote_txt}")
+            try:
+                idx = int(vote_txt) - 1
+                if idx >= len(candidates):
+                    logging.error(f"Invalid vote index: {idx}")
+                if 0 <= idx < len(candidates):
+                    votes[idx] += 1
+                    logging.info(f"{self.source} tally: {votes}")
+                    if votes[idx] >= self.winning_vote_count:
+                        winner_idx = idx
+                        logging.info(f"{self.source} early winner: {winner_idx + 1}")
+                        break
+            except ValueError:
+                logging.warning(f"{self.source} malformed vote ignored: {vote_txt!r}")
+
+        if winner_idx is None:
+            winner_idx = max(range(len(votes)), key=lambda v: votes[v])
+
+        logging.info(f"{self.source} final winner: {winner_idx + 1} -> {candidates[winner_idx]!r}")
+
+        return votes, winner_idx
