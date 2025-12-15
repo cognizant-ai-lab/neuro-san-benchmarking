@@ -50,17 +50,17 @@ class FirstToKVoter(Voter):
         :return: A tuple of (list of number of votes per candidate, winner index)
         """
 
-        numbered = "\n".join(f"{i+1}. {candidate}" for i, candidate in enumerate(candidates))
+        numbered: str = "\n".join(f"{i+1}. {candidate}" for i, candidate in enumerate(candidates))
         numbered = f"problem: {problem}, {numbered}"
         logging.info(f"{self.source} {self.discriminator_name} discriminator query: {numbered}")
 
-        votes = [0] * len(candidates)
-        winner_idx = None
+        votes: list[int] = [0] * len(candidates)
+        winner_idx: int = None
         for _ in range(self.number_of_votes):
             vote_txt: str = self.discriminator_caller.call_agent(f"{numbered}\n\n")
             logging.info(f"{self.source} raw vote: {vote_txt}")
             try:
-                idx = int(vote_txt) - 1
+                idx: int = int(vote_txt) - 1
                 if idx >= len(candidates):
                     logging.error(f"Invalid vote index: {idx}")
                 if 0 <= idx < len(candidates):
