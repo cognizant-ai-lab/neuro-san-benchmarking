@@ -16,6 +16,7 @@
 
 from typing import Any
 
+import json
 import logging
 
 from neuro_san.internals.graph.activations.branch_activation import BranchActivation
@@ -59,10 +60,11 @@ class CodedToolAgentCaller(AgentCaller):
         """
 
         use_name: str = self.get_name()
-        logging.debug(f"call_agent({use_name}):")
+        logging.debug(f"call_agent({use_name}) sending args: {json.dumps(tool_args, indent=4)}")
 
         # Call the agent
-        resp: str = await self.branch_activation.use_tool(use_name, tool_args, sly_data=None)
+        sly_data = {}
+        resp: str = await self.branch_activation.use_tool(use_name, tool_args, sly_data=sly_data)
 
         logging.debug(f"call_agent({use_name}): received {len(resp)} chars")
         if self.solver_parsing is not None:
