@@ -26,7 +26,7 @@ from decomposer.solver_parsing import SolverParsing
 
 class CodedToolAgentCaller(AgentCaller):
     """
-    Generic interface for calling an agent
+    AgentCaller implementation that uses a BranchActivation from a CodedTool for calling an agent
     """
 
     def __init__(self, branch_activation: BranchActivation,
