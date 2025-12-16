@@ -22,7 +22,7 @@
             "name": "multiagent_decomposer",
             "function": {
                 "description": """
-Takes a problem and potentially solves it by breaking it up into multiple sub-problems.
+I can take a problem and solve it by breaking it up into smaller pieces.
                 """,
                 "parameters": {
                     "type": "object",
@@ -70,27 +70,27 @@ that is carried out by this tool.
                             "description": "Description of a problem."
                         },
                         "max_depth": {
-                            "type": "integer",
+                            "type": "int",
                             "description": "The maximum depth of solution decomposition."
                             "default": 5
                         },
                         "winning_vote_count": {
-                            "type": "integer",
+                            "type": "int",
                             "description": "Number of votes required to win."
                             "default": 2
                         },
                         "candidate_count": {
-                            "type": "integer",
+                            "type": "int",
                             "description": "Number of candidates to consider during the decomposition stage.",
                             "default": 3
                         },
                         "number_of_votes": {
-                            "type": "integer",
+                            "type": "int",
                             "description": "Number of candidates for any round of voting."
                             "default": 3
                         },
                         "solution_candidate_count": {
-                            "type": "integer",
+                            "type": "int",
                             "description": "Number of candidates to consider during the problem solving stage.",
                             "default": 3
                         },
@@ -103,13 +103,13 @@ that is carried out by this tool.
             # Use the "args" key to define key/value pairs that are passed into
             # the CodedTool above as arguments.  These are merged with other
             # parameter key/value pairs that the calling agent supplies.
-            # 
+            #
             # If there were any collisions on keys, these args below would win.
-            # 
+            #
             # If you would want the calling agent's preferences to take precedence
             # over something defined in a hocon file, use a default value in the
             # function definition (above).
-            "args": { 
+            "args": {
 
                 # Tools which are used to manage the mechanics of the loop
                 "tools": {
