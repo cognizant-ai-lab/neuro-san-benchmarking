@@ -44,7 +44,7 @@ class TestUnitTestHocons(TestCase):
         # "multiagent_decomposer/readme_test_case.hocon",
 
         # List more hocon files as they become available here.
-    ]))
+    ]), skip_on_empty=True)
     @pytest.mark.timeout(90)  # 90 seconds for each test
     def test_hocon(self, test_name: str, test_hocon: str):
         """
