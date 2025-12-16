@@ -56,21 +56,51 @@ class NeuroSanSolver:
         if self.solution_candidate_count is None:
             self.solution_candidate_count = default_count
 
-        session: AgentSession = None
         self.parsing = SolverParsing()
 
-        # Initialize the Neuro SAN agent session callers
-        session = SessionManager.get_session("composition_discriminator")
-        self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+        self.composition_discriminator_caller: AgentCaller = None
+        self.decomposer_caller: AgentCaller = None
+        self.problem_solver_caller: AgentCaller = None
+        self.solution_discriminator_caller: AgentCaller = None
 
-        session = SessionManager.get_session("decomposer")
-        self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+    def set_callers(self, composition_discriminator_caller: AgentCaller,
+                    decomposer_caller: AgentCaller,
+                    problem_solver_caller: AgentCaller,
+                    solution_discriminator_caller: AgentCaller):
+        """
+        Set AgentCallers.
+        """
 
-        session = SessionManager.get_session("problem_solver")
-        self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+        if composition_discriminator_caller is not None:
+            self.composition_discriminator_caller = composition_discriminator_caller
+        if decomposer_caller is not None:
+            self.decomposer_caller = decomposer_caller
+        if problem_solver_caller is not None:
+            self.problem_solver_caller = problem_solver_caller
+        if solution_discriminator_caller is not None:
+            self.solution_discriminator_caller = solution_discriminator_caller
 
-        session = SessionManager.get_session("solution_discriminator")
-        self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+    def set_callers_if_not_already_set(self):
+        """
+        Initialize AgentCallers if they are not already set.
+        """
+        session: AgentSession = None
+
+        if self.composition_discriminator_caller is not None:
+            session = SessionManager.get_session("composition_discriminator")
+            self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+
+        if self.decomposer_caller is not None:
+            session = SessionManager.get_session("decomposer")
+            self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        if self.problem_solver_caller is not None:
+            session = SessionManager.get_session("problem_solver")
+            self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        if self.solution_discriminator_caller is not None:
+            session = SessionManager.get_session("solution_discriminator")
+            self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
 
     def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
@@ -79,6 +109,8 @@ class NeuroSanSolver:
 
         :return: The root trace node of the decomposition process
         """
+        self.set_callers_if_not_already_set()
+
         logging.info(f"[solve] depth={depth} path={path} problem: {problem[:120]}{'...' if len(problem) > 120 else ''}")
 
         node = {
@@ -91,9 +123,9 @@ class NeuroSanSolver:
             "composition": None,
             "response": None,
             "final": None,
-            "final_num": None,
             "extracted_final": None,
-            "error": None,
+            "atomic": None,
+            # Not included: "final_num" and "error"
         }
 
         if depth >= max_depth:

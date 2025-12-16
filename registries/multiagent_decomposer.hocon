@@ -39,22 +39,40 @@ Takes a problem and potentially solves it by breaking it up into multiple sub-pr
             "instructions": """
 You receive a description of a single problem.
 Take this problem and always use the decomposition_solver tool to solve it by potentially
-breaking it up into smaller problems.  Always return verbatim whatever the decomposition_solver tool returns.
+breaking it up into smaller problems.  The return value from the decomposition_solver tool is
+the final answer for the decomposition, always return verbatim whatever answer it returns.
 """,
+
             "tools": ["decomposition_solver"],
+
+            "allow": {
+                "to_upstream": {
+                    # Return the full decomposition trace node tree in sly_data
+                    "sly_data": ["trace_node"]
+                }
+            }
         },
         {
             "name": "decomposition_solver",
             "function": {
                 "description": """
-Takes a problem and solves it by breaking it up into multiple sub-problems.
+Takes a problem and solves it by breaking it up into multiple sub-problems,
+Will return a single string with the final answer extracted from the problem solver algorithm
+that is carried out by this tool.
                 """,
+                # This tool also puts a full node-tree describing the decomposition trace on sly_data
+                # via the "trace_node" key.
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "problem": {
                             "type": "string",
                             "description": "Description of a problem."
+                        },
+                        "max_depth": {
+                            "type": "integer",
+                            "description": "The maximum depth of solution decomposition."
+                            "default": 5
                         },
                         "winning_vote_count": {
                             "type": "integer",
