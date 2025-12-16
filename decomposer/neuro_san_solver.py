@@ -131,7 +131,6 @@ class NeuroSanSolver:
 
         if depth >= max_depth:
             logging.info(f"[solve] depth={depth} -> atomic (max depth)")
-            # Should this be _solve_atomic()?
             resp, finals, votes, winner_idx, solutions = await self._solve_atomic_with_voting(problem)
             _ = solutions
             node["response"] = resp
@@ -201,12 +200,6 @@ class NeuroSanSolver:
         We pass the original problem, the composition description, and the sub-solutions.
         """
         return f"Solve C(P1, P2) such that C={c}, P1={s1}, P2={s2}"
-
-    async def _solve_atomic(self, problem: str) -> str:
-        """
-        Single call to problem_solver; returns the full agent response.
-        """
-        return await self.problem_solver_caller.call_agent(problem)
 
     async def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
