@@ -86,19 +86,19 @@ class NeuroSanSolver:
         """
         session: AgentSession = None
 
-        if self.composition_discriminator_caller is not None:
+        if self.composition_discriminator_caller is None:
             session = SessionManager.get_session("composition_discriminator")
             self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
 
-        if self.decomposer_caller is not None:
+        if self.decomposer_caller is None:
             session = SessionManager.get_session("decomposer")
             self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
 
-        if self.problem_solver_caller is not None:
+        if self.problem_solver_caller is None:
             session = SessionManager.get_session("problem_solver")
             self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
 
-        if self.solution_discriminator_caller is not None:
+        if self.solution_discriminator_caller is None:
             session = SessionManager.get_session("solution_discriminator")
             self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
 
