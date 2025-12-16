@@ -28,8 +28,12 @@ from decomposer.solver_parsing import SolverParsing
 
 class DecompositionSolver(BranchActivation, CodedTool):
     """
-    Interface contract for a coded tool to squelch the anti-pattern of
-    Static Cling.
+    A CodedTool implementation that uses the NeuroSanSolver to break down
+    a problem into smaller subproblems inspired by the MAKER algorithm.
+
+    Note that we are also doubly-inheriting from BranchActivation to get access to
+    the ability to call agents from a CodedTool via its use_tool() method.
+    This happens inside the CodedToolAgentCaller heavily used by this class.
 
     Upon activation by the agent hierarchy, a CodedTool will have either its
     async_invoke() (preferred) or synchronous invoke() method called by the system.
@@ -104,6 +108,7 @@ class DecompositionSolver(BranchActivation, CodedTool):
         :return: A return value that goes into the chat stream.
         """
 
+        # Create the solver and use some of the arguments to configure it
         solver = NeuroSanSolver(winning_vote_count=args.get("winning_vote_count", 2),
                                 candidate_count=args.get("candidate_count"),
                                 number_of_votes=args.get("number_of_votes"),
@@ -112,6 +117,7 @@ class DecompositionSolver(BranchActivation, CodedTool):
         tools: Dict[str, str] = {}
         tools = args.get("tools", tools)
 
+        # Set up the AgentCallers to use this CodedTool as a basis for calling the agents.
         parsing = SolverParsing()
         composition_discriminator_caller = CodedToolAgentCaller(self, parsing,
                                                                 name=tools.get("composition_discriminator"))
