@@ -20,8 +20,8 @@ import logging
 from os import getpid
 from threading import get_ident
 
-from neuro_san.client.agent_session_factory import AgentSession
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
+from neuro_san.interfaces.agent_session import AgentSession
 
 from decomposer.agent_caller import AgentCaller
 from decomposer.solver_parsing import SolverParsing
@@ -56,7 +56,7 @@ class NeuroSanAgentCaller(AgentCaller):
             return self.name
         return f"{self.agent_session}"
 
-    def call_agent(self, text: str, timeout_ms: float = 100000.0) -> str:
+    async def call_agent(self, text: str, timeout_ms: float = 100000.0) -> str:
         """
         Call a single agent with given text, return its response.
         """
