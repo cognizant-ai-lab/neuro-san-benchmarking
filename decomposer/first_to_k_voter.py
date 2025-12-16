@@ -41,7 +41,7 @@ class FirstToKVoter(Voter):
         self.number_of_votes: int = number_of_votes
         self.winning_vote_count: int = winning_vote_count
 
-    def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
+    async def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
         """
         Generic voting interface
 
@@ -57,7 +57,7 @@ class FirstToKVoter(Voter):
         votes: list[int] = [0] * len(candidates)
         winner_idx: int = None
         for _ in range(self.number_of_votes):
-            vote_txt: str = self.discriminator_caller.call_agent(f"{numbered}\n\n")
+            vote_txt: str = await self.discriminator_caller.call_agent(f"{numbered}\n\n")
             logging.info(f"{self.source} raw vote: {vote_txt}")
             try:
                 idx: int = int(vote_txt) - 1

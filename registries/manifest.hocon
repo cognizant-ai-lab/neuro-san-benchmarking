@@ -4,4 +4,5 @@
     "problem_solver.hocon": true,
     "composition_discriminator.hocon": true,
     "multi_step_decomposer.hocon": true
+    "multiagent_decomposer.hocon": true
 }

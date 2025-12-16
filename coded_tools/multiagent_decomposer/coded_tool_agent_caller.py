@@ -17,32 +17,29 @@
 from typing import Any
 
 import logging
-from os import getpid
-from threading import get_ident
 
-from neuro_san.client.streaming_input_processor import StreamingInputProcessor
-from neuro_san.interfaces.agent_session import AgentSession
+from neuro_san.internals.graph.activations.branch_activation import BranchActivation
 
 from decomposer.agent_caller import AgentCaller
 from decomposer.solver_parsing import SolverParsing
 
 
-class NeuroSanAgentCaller(AgentCaller):
+class CodedToolAgentCaller(AgentCaller):
     """
-    Generic interface for calling an agent
+    AgentCaller implementation that uses a BranchActivation from a CodedTool for calling an agent
     """
 
-    def __init__(self, agent_session: AgentSession,
+    def __init__(self, branch_activation: BranchActivation,
                  parsing: SolverParsing = None,
                  name: str = None):
         """
         Constructor
 
-        :param agent_session: The agent session
+        :param branch_activation: The BranchActivation (CodedTool) used to call the agents.
         :param parsing: The SolverParsing instance to use (if any) to extract the final answer
         :param name: The name of the agent
         """
-        self.agent_session: AgentSession = agent_session
+        self.branch_activation: BranchActivation = branch_activation
         self.solver_parsing: SolverParsing = parsing
         self.name: str = name
 
@@ -52,40 +49,27 @@ class NeuroSanAgentCaller(AgentCaller):
 
         :return: The name of the agent
         """
-        if self.name is not None:
-            return self.name
-        return f"{self.agent_session}"
+        return self.name
 
     async def call_agent(self, text: str, timeout_ms: float = 100000.0) -> str:
         """
         Call a single agent with given text, return its response.
         """
-        # Set up the chat state for the request
-        chat_state: dict[str, Any] = {
-            "last_chat_response": None,
-            "prompt": "",
-            "timeout": timeout_ms,
-            "num_input": 0,
-            "user_input": text,
-            "sly_data": None,
-            "chat_filter": {"chat_filter_type": "MAXIMAL"},
+        _ = timeout_ms
+
+        tool_args: dict[str, Any] = {
+            # This will need to change to match the agent parameters spec
+            "situation": text
         }
 
         use_name: str = self.get_name()
         logging.debug(f"call_agent({use_name}): sending {len(text)} chars")
 
         # Call the agent
-        inp = StreamingInputProcessor("DEFAULT", self._tmpfile("program_mode_thinking"), self.agent_session, None)
-        chat_state = inp.process_once(chat_state)
+        resp: str = await self.branch_activation.use_tool(use_name, tool_args, sly_data=None)
 
-        # Parse the response
-        resp: str = chat_state.get("last_chat_response") or ""
         logging.debug(f"call_agent({use_name}): received {len(resp)} chars")
         if self.solver_parsing is not None:
             resp = self.solver_parsing.extract_final(resp)
 
         return resp
-
-    # Unique temp file per *call*
-    def _tmpfile(self, stem: str) -> str:
-        return f"/tmp/{stem}_{getpid()}_{get_ident()}.txt"
