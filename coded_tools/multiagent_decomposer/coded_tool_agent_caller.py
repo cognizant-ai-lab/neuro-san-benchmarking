@@ -51,19 +51,15 @@ class CodedToolAgentCaller(AgentCaller):
         """
         return self.name
 
-    async def call_agent(self, text: str, timeout_ms: float = 100000.0) -> str:
+    async def call_agent(self, tool_args: dict[str, Any]) -> str:
         """
         Call a single agent with given text, return its response.
+        :param tool_args: A dictionary of arguments to pass to the agent
+        :return: The text of the response
         """
-        _ = timeout_ms
-
-        tool_args: dict[str, Any] = {
-            # This will need to change to match the agent parameters spec
-            "situation": text
-        }
 
         use_name: str = self.get_name()
-        logging.debug(f"call_agent({use_name}): sending {len(text)} chars")
+        logging.debug(f"call_agent({use_name}):")
 
         # Call the agent
         resp: str = await self.branch_activation.use_tool(use_name, tool_args, sly_data=None)

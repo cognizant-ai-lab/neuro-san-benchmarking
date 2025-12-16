@@ -14,6 +14,8 @@
 #
 # END COPYRIGHT
 
+from typing import Any
+
 
 class AgentCaller:
     """
@@ -28,11 +30,11 @@ class AgentCaller:
         """
         raise NotImplementedError
 
-    async def call_agent(self, text: str) -> str:
+    async def call_agent(self, tool_args: dict[str, Any]) -> str:
         """
         Call an agent with text
 
-        :param text: The text to send to the agent
+        :param tool_args: A dictionary of arguments to pass to the agent
         :return: The text of the response
         """
         raise NotImplementedError
