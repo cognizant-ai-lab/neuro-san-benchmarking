@@ -16,6 +16,7 @@
 
 from typing import Any
 
+import asyncio
 import json
 import logging
 import os
@@ -307,7 +308,8 @@ def solve(problem: str, depth: int = 0, max_depth: int = MAX_DEPTH) -> tuple[str
               and the extracted final answer from that line
     """
     solver = NeuroSanSolver(winning_vote_count=WINNING_VOTE_COUNT)
-    node: dict[str, Any] = solver.solve(problem, depth, max_depth, "0")
+
+    node: dict[str, Any] = asyncio.run(solver.solve(problem, depth, max_depth, "0"))
 
     _trace_data.tree = node
 

@@ -15,8 +15,6 @@
 #
 # END COPYRIGHT
 
-import asyncio
-
 from typing import Any
 from typing import Dict
 
@@ -70,39 +68,9 @@ class DecompositionSolver(BranchActivation, CodedTool):
                 adding the data is not invoke()-ed more than once.
         :return: A return value that goes into the chat stream.
         """
-
-        solver = NeuroSanSolver(winning_vote_count=args.get("winning_vote_count", 2),
-                                candidate_count=args.get("candidate_count"),
-                                number_of_votes=args.get("number_of_votes"),
-                                solution_candidate_count=args.get("solution_candidate_count"))
-
-        tools: Dict[str, str] = {}
-        tools = args.get("tools", tools)
-
-        parsing = SolverParsing()
-        composition_discriminator_caller = CodedToolAgentCaller(self, parsing,
-                                                                name=tools.get("composition_discriminator"))
-        decomposer_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("decomposer"))
-        problem_solver_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("problem_solver"))
-        solution_discriminator_caller = CodedToolAgentCaller(self, parsing, name=tools.get("solution_discriminator"))
-        solver.set_callers(composition_discriminator_caller,
-                           decomposer_caller,
-                           problem_solver_caller,
-                           solution_discriminator_caller)
-
-        problem: str = args.get("problem")
-        max_depth: int = args.get("max_depth", 5)
-
-        # Call the solver to solve the problem by decomposition
-        trace_node: dict[str, Any] = solver.solve(problem, depth=0, max_depth=max_depth)
-
-        # Publish the trace node to the bulletin board for return.
-        # This can be a large dictionary describing the process of decomposition into a solution tree.
-        sly_data["trace_node"] = trace_node
-
-        # Return the extracted final answer as the text answer for this tool.
-        result: str = trace_node.get("extracted_final")
-        return result
+        # Do not raise an exception here, but pass instead.
+        # This allows for fully asynchronous CodedTools to not have to worry about
+        # the synchronous bits.
 
     async def async_invoke(self, args: Dict[str, Any], sly_data: Dict[str, Any]) -> Any:
         """
@@ -135,4 +103,36 @@ class DecompositionSolver(BranchActivation, CodedTool):
                 adding the data is not invoke()-ed more than once.
         :return: A return value that goes into the chat stream.
         """
-        return await asyncio.to_thread(self.invoke, args, sly_data)
+
+        solver = NeuroSanSolver(winning_vote_count=args.get("winning_vote_count", 2),
+                                candidate_count=args.get("candidate_count"),
+                                number_of_votes=args.get("number_of_votes"),
+                                solution_candidate_count=args.get("solution_candidate_count"))
+
+        tools: Dict[str, str] = {}
+        tools = args.get("tools", tools)
+
+        parsing = SolverParsing()
+        composition_discriminator_caller = CodedToolAgentCaller(self, parsing,
+                                                                name=tools.get("composition_discriminator"))
+        decomposer_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("decomposer"))
+        problem_solver_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("problem_solver"))
+        solution_discriminator_caller = CodedToolAgentCaller(self, parsing, name=tools.get("solution_discriminator"))
+        solver.set_callers(composition_discriminator_caller,
+                           decomposer_caller,
+                           problem_solver_caller,
+                           solution_discriminator_caller)
+
+        problem: str = args.get("problem")
+        max_depth: int = args.get("max_depth", 5)
+
+        # Call the solver to solve the problem by decomposition
+        trace_node: dict[str, Any] = await solver.solve(problem, depth=0, max_depth=max_depth)
+
+        # Publish the trace node to the bulletin board for return.
+        # This can be a large dictionary describing the process of decomposition into a solution tree.
+        sly_data["trace_node"] = trace_node
+
+        # Return the extracted final answer as the text answer for this tool.
+        result: str = trace_node.get("extracted_final")
+        return result
