@@ -45,7 +45,7 @@ class TestUnitTestHocons(TestCase):
 
         # List more hocon files as they become available here.
     ]), skip_on_empty=True)
-    @pytest.mark.timeout(120)  # seconds for each test
+    @pytest.mark.timeout(60)  # seconds for each test
     def test_hocon(self, test_name: str, test_hocon: str):
         """
         Test method for a single parameterized test case specified by a hocon file.
