@@ -124,6 +124,13 @@ that is carried out by this tool.
                     # Tool which is used as the discriminator when voting on problem solver solutions
                     "composition_discriminator": "/composition_discriminator",
                 },
+            },
+
+            "allow": {
+                "from_downstream": {
+                    # Let messages from external agents flow through.
+                    "messages": true
+                }
             }
         }
     ]

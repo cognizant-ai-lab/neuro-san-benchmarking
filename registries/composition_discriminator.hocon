@@ -46,7 +46,7 @@ You will receive a problem statement along with a number of suggested solutions 
 
             "instructions": """
 You are a solution discriminator.
-You receive a problem, 'P' and a numbered list of its solutions,
+You receive a problem, 'P' and an ordered list of its solutions,
 You need to verify each candidate solution for correctness.
 First, review the various solution candidates carefully and tell me what you think about each one, in detail.
 Then, return your preferred candidate solution index in the last line after 'vote:' with no extra explanation or formatting.
