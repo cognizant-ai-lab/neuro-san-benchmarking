@@ -14,6 +14,8 @@
 #
 # END COPYRIGHT
 
+from typing import Any
+
 import logging
 
 from decomposer.agent_caller import AgentCaller
@@ -28,6 +30,7 @@ class FirstToKVoter(Voter):
 
     def __init__(self, source: str,
                  discriminator_name: str,
+                 candidates_key: str,
                  discriminator_caller: AgentCaller,
                  number_of_votes: int = 3,
                  winning_vote_count: int = 2):
@@ -37,6 +40,7 @@ class FirstToKVoter(Voter):
 
         self.source: str = source
         self.discriminator_name: str = discriminator_name
+        self.candidates_key: str = candidates_key
         self.discriminator_caller: AgentCaller = discriminator_caller
         self.number_of_votes: int = number_of_votes
         self.winning_vote_count: int = winning_vote_count
@@ -54,10 +58,15 @@ class FirstToKVoter(Voter):
         numbered = f"problem: {problem}, {numbered}"
         logging.info(f"{self.source} {self.discriminator_name} discriminator query: {numbered}")
 
+        tool_args: dict[str, Any] = {
+            "problem": problem,
+            self.candidates_key: candidates
+        }
+
         votes: list[int] = [0] * len(candidates)
         winner_idx: int = None
         for _ in range(self.number_of_votes):
-            vote_txt: str = await self.discriminator_caller.call_agent(f"{numbered}\n\n")
+            vote_txt: str = await self.discriminator_caller.call_agent(tool_args)
             logging.info(f"{self.source} raw vote: {vote_txt}")
             try:
                 idx: int = int(vote_txt) - 1

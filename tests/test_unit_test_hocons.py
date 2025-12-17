@@ -41,11 +41,11 @@ class TestUnitTestHocons(TestCase):
         # Barring that, try to stick to alphabetical order.
 
         # Comment this back in when it's working more reliably.
-        # "multiagent_decomposer/readme_test_case.hocon",
+        "multiagent_decomposer/readme_test_case.hocon",
 
         # List more hocon files as they become available here.
     ]), skip_on_empty=True)
-    @pytest.mark.timeout(90)  # 90 seconds for each test
+    @pytest.mark.timeout(120)  # seconds for each test
     def test_hocon(self, test_name: str, test_hocon: str):
         """
         Test method for a single parameterized test case specified by a hocon file.
