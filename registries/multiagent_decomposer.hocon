@@ -39,6 +39,7 @@ I can take a problem and solve it by breaking it up into smaller pieces.
                             "type": "int",
                             "description": "Number of votes required to win."
                             "default": 2
+                        }
                     }
                     "required": [ "problem" ]
                 }
