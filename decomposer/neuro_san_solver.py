@@ -174,7 +174,7 @@ class NeuroSanSolver:
         for i in range(2):
             use_path: str = f"{path}.{i}"
             coroutines.append(self.solve(problems[i], depth + 1, max_depth, use_path))
-        nodes: list[dict[str, Any]] = await asyncio.gather(*coroutines)
+        nodes: list[dict[str, Any]] = await gather(*coroutines)
 
         node["children"] = nodes
         s1: str = nodes[0].get("extracted_final")
@@ -256,7 +256,7 @@ class NeuroSanSolver:
 
         # Parallelize finding different solutions for the problem
         coroutines: list[Future] = []
-        for k in range(self.candidate_count):
+        for _ in range(self.candidate_count):
             coroutines.append(self.decomposer_caller.call_agent(tool_args))
         results: list[str] = await gather(*coroutines)
 
