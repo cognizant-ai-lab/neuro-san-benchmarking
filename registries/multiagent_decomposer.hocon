@@ -125,16 +125,16 @@ that is carried out by this tool.
                 # Tools which are used to manage the mechanics of the loop
                 "tools": {
                     # Tool which is used to decompose a problem
-                    "decomposer": "/decomposer",
+                    "decomposer": "decomposer",
 
                     # Tool which is used as the discriminator when voting on decompositions
-                    "solution_discriminator": "/solution_discriminator",
+                    "solution_discriminator": "solution_discriminator",
 
                     # Tool which is used to suggest problem solutions
-                    "problem_solver": "/problem_solver",
+                    "problem_solver": "problem_solver",
 
                     # Tool which is used as the discriminator when voting on problem solver solutions
-                    "composition_discriminator": "/composition_discriminator",
+                    "composition_discriminator": "composition_discriminator",
                 },
             },
 
@@ -144,6 +144,175 @@ that is carried out by this tool.
                     "messages": true
                 }
             }
+        },
+        {
+            "name": "decomposer",
+            "function": {
+                "description": """
+You receive a problem statement and you break it into two sub-problems.
+                """,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem": {
+                            "type": "string",
+                            "description": "Description of a problem."
+                        },
+                    },
+                    "required": ["problem"]
+                }
+            },
+            "llm_config": {
+                "temperature": "0.5"
+            },
+
+            "instructions": """
+You receive a problem, 'P', and break it into two sub-problems, 'P1' and 'P2', that, if solved can be easily used to solve 'P'.
+Here is how we can formalize this:
+'P' = F('P1', 'P2') where F() is how we should combine the solutions to 'P1' and 'P2'.
+As long as the complexity of 'P1' and 'P2' are less than 'P', we are fine.
+
+If 'P' is obvious and simple to solve, or cannot be broken into two independent sub-problems,
+return the original 'P', like this: 'vote:' P1=[P], P2=[None], F=[None]
+Make sure 'P' is specified.
+
+Break 'P' into two sub-problems and return them on the last line after 'vote:' as follows: P1=[p1], P2=[p2], F=[f]
+where 'p1', 'p2' are your formulations for the two sub-problems, and 'f' is how to combine their solutions in order to solve 'P'.
+
+Note that 'p1', and 'p2' will be passed on to another agent to solve them with no other context, and so they need to be clearly defined and self contained.
+
+Make sure 'p1', 'p2', and 'f' are clearly and completely specified with no ambiguity.
+Where reasonable, define 'p1', 'p2', and 'f' symbolically, using mathematical expressions and definitions. Do not use ambiguous terms and words.
+Remember, there should NOT be any reference to 'p1' in the definition of 'p2'.
+'F' should be simple and trivial and should not need much explanation.
+
+Note that the sub-problems are meant to be solved in parallel so they should be self-contained and independent from each other,
+and the solution to one cannot depend on the solution of the other.
+""",
+        },
+        {
+            "name": "solution_discriminator",
+            "function": {
+                "description": """
+You are a solution discriminator.
+You will receive a problem statement along with a number of suggested decompositions of the problem, and you return the decomposition you prefer.
+                """,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem": {
+                            "type": "string",
+                            "description": "Description of a problem."
+                        },
+                        "decompositions": {
+                            "type": "array",
+                            "description": "An ordered list of decompositions of the problem."
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                    },
+                    "required": ["problem", "decompositions"]
+                }
+            },
+
+            "instructions": """
+You are a solution discriminator. You receive a problem, 'P' and a number of decompositions in the following form:
+
+1. P1=[p1_1], P2=[p2_1], F=[f_1]
+2. P1=[p1_2], P2=[p2_2], F=[f_2]
+3. P1=[p1_3], P2=[p2_3], F=[f_3]
+...
+
+where each line is a decomposition candidate, 'P1' and 'P2' are the proposed subproblems,
+and 'F' is the function that tells us how to put their solutions together.
+
+A decomposition may take the following form P1=[P], P2=[None], F=[None]
+This means 'P' is not decomposed, which may be a valid option too.
+
+You need to check each candidate for correctness, simplicity of the decompositions, as well as simplicity and correctness of 'F'.
+Make sure 'P1' and 'P2' are independent and can be solved in isolation.
+If you have a candidate that suggests not decomposing 'P', and if 'P' is already simple enough or cannot be decomposed easily,
+then return that candidate number as your preference.
+
+Note that 'p1', and 'p2' will be passed on to another agent to solve them with no other context, and so they need to be clearly defined and self contained.
+
+Make sure 'p1', 'p2', and 'f' are clearly and completely specified with no ambiguity.
+Where reasonable, 'p1', 'p2', and 'f' should have been defined using mathematical expressions and definitions, but no undefined symbols should be present. Ambiguous terms and words should not have been used.
+Remember, there should NOT be any reference to 'p1' in the definition of 'p2'.
+'F' should be simple and trivial and should not need much explanation.
+
+Note that the sub-problems are meant to be solved in parallel so they should be self-contained and independent from each other,
+and the solution to one cannot depend on the solution of the other.
+
+First, review the various decomposition candidates carefully and tell me what you think about each one, in detail.
+Then, return your preferred decomposition index in the last line after 'vote:' with no extra explanation or formatting.
+"""
+        },
+        {
+            "name": "problem_solver",
+            "function": {
+                "description": """
+You are a reasoning module. You will receive a problem, 'P' to solve and return the result.
+First, think carefully about how to solve the problem and provide detailed reasoning steps for how to solve 'P',
+Then solve 'P' using the reasoning steps.
+Return the solution on the last line after 'vote:' with no extra explanation or formatting.
+                """,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem": {
+                            "type": "string",
+                            "description": "Description of a problem."
+                        },
+                    },
+                    "required": ["problem"]
+                }
+            },
+            "llm_config": {
+                "temperature": "0.5"
+            },
+
+            "instructions": """
+You are a reasoning module. You will receive a problem, 'P' to solve and return the result.
+First, think carefully about how to solve the problem and provide detailed reasoning steps for how to solve 'P',
+Then solve 'P' using the reasoning steps.
+Return the solution on the last line after 'vote:' with no extra explanation or formatting.
+"""
+        },
+        {
+            "name": "composition_discriminator",
+            "function": {
+                "description": """
+You are a composition discriminator.
+You will receive a problem statement along with a number of suggested solutions of the problem, and you return the solution you prefer.
+                """,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "problem": {
+                            "type": "string",
+                            "description": "Description of a problem."
+                        },
+                        "solutions": {
+                            "type": "array",
+                            "description": "A ordered list of solutions to the problem"
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                    },
+                    "required": ["problem", "solutions"]
+                }
+            },
+
+            "instructions": """
+You are a solution discriminator.
+You receive a problem, 'P' and an ordered list of its solutions,
+You need to verify each candidate solution for correctness.
+First, review the various solution candidates carefully and tell me what you think about each one, in detail.
+Then, return your preferred candidate solution index in the last line after 'vote:' with no extra explanation or formatting.
+"""
         }
     ]
 }
