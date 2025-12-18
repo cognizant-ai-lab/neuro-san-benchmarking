@@ -30,8 +30,17 @@ I can take a problem and solve it by breaking it up into smaller pieces.
                             "type": "string",
                             "description": "Description of a problem."
                         },
-                    },
-                    "required": []
+                        "max_depth": {
+                            "type": "int",
+                            "description": "The maximum depth of solution decomposition."
+                            "default": 5
+                        },
+                        "winning_vote_count": {
+                            "type": "int",
+                            "description": "Number of votes required to win."
+                            "default": 2
+                    }
+                    "required": [ "problem" ]
                 }
             },
 
@@ -39,6 +48,7 @@ I can take a problem and solve it by breaking it up into smaller pieces.
 You receive a description of a single problem.
 Do not attempt to solve this problem yourself. Instead, take this problem description and
 always use the decomposition_solver tool to solve it.
+You may only pass arguments to the decomposition_solver tool that are explicitly defined in the input.
 Always return verbatim whatever answer the decomposition_solver returns without any modification
 or additional commentary.
 """,
