@@ -16,7 +16,6 @@
 
 from typing import Any
 
-import asyncio
 import json
 import logging
 import os
@@ -26,7 +25,10 @@ import threading
 import time
 from pathlib import Path
 
-from decomposer.neuro_san_solver import NeuroSanSolver
+from neuro_san.interfaces.agent_session import AgentSession
+
+from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
+from decomposer.session_manager import SessionManager
 from decomposer.trace_data import TraceData
 
 
@@ -308,10 +310,18 @@ class MultiAgentReasoner:
         :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
                   and the extracted final answer from that line
         """
-        solver = NeuroSanSolver(winning_vote_count=self.WINNING_VOTE_COUNT)
+        session: AgentSession = SessionManager.get_session("multiagent_decomposer")
+        agent_caller = NeuroSanAgentCaller(session)
 
-        node: dict[str, Any] = asyncio.run(solver.solve(problem, depth, max_depth, "0"))
+        tool_args: dict[str, Any] = {
+            "problem": problem,
+            "winning_vote_count": self.WINNING_VOTE_COUNT,
+            "max_depth": max_depth,
+        }
+        _ = agent_caller.call_agent(tool_args)
+        sly_data: dict[str, Any] = agent_caller.get_sly_data()
 
+        node: dict[str, Any] = sly_data.get("trace_node")
         self.trace_data.tree = node
 
         if depth == 0:
