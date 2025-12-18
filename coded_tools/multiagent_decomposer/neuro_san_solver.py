@@ -20,14 +20,10 @@ from asyncio import Future
 from asyncio import gather
 import logging
 
-from neuro_san.client.agent_session_factory import AgentSession
-
-from decomposer.agent_caller import AgentCaller
-from decomposer.neuro_san_agent_caller import NeuroSanAgentCaller
-from decomposer.first_to_k_voter import FirstToKVoter
-from decomposer.session_manager import SessionManager
-from decomposer.solver_parsing import SolverParsing
-from decomposer.voter import Voter
+from coded_tools.multiagent_decomposer.agent_caller import AgentCaller
+from coded_tools.multiagent_decomposer.first_to_k_voter import FirstToKVoter
+from coded_tools.multiagent_decomposer.solver_parsing import SolverParsing
+from coded_tools.multiagent_decomposer.voter import Voter
 
 
 class NeuroSanSolver:
@@ -82,29 +78,6 @@ class NeuroSanSolver:
         if solution_discriminator_caller is not None:
             self.solution_discriminator_caller = solution_discriminator_caller
 
-    def set_callers_if_not_already_set(self):
-        """
-        Initialize AgentCallers if they are not already set.
-        """
-        session: AgentSession = None
-
-        # DEF - these need to be async now
-        if self.composition_discriminator_caller is None:
-            session = SessionManager.get_session("composition_discriminator")
-            self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
-
-        if self.decomposer_caller is None:
-            session = SessionManager.get_session("decomposer")
-            self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
-
-        if self.problem_solver_caller is None:
-            session = SessionManager.get_session("problem_solver")
-            self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
-
-        if self.solution_discriminator_caller is None:
-            session = SessionManager.get_session("solution_discriminator")
-            self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
-
     async def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
         Internal recursive solver that returns (response, trace_node).
@@ -112,8 +85,6 @@ class NeuroSanSolver:
 
         :return: The root trace node of the decomposition process
         """
-        self.set_callers_if_not_already_set()
-
         logging.info(f"[solve] depth={depth} path={path} problem: {problem[:120]}{'...' if len(problem) > 120 else ''}")
 
         node = {

@@ -21,6 +21,9 @@ import re
 class SolverParsing:
     """
     Parses results for solver.
+
+    This class would probably not be necessary if the agents used by the NeuroSanSolver
+    were using the "structure_formats": "json" option.
     """
 
     # agents end their final answer on the last line after this token
