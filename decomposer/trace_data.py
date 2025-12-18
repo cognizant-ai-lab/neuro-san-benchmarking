@@ -1,4 +1,3 @@
-
 # Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +13,16 @@
 # limitations under the License.
 #
 # END COPYRIGHT
-from unittest import TestCase
 
-from decomposer.multiagent_reasoner import MultiAgentReasoner
+from typing import Any
 
 
-class TestMultiAgentReasoner(TestCase):
+class TraceData:
     """
-    Tests multi-agent reasoner
+    TraceData for a single MultiAgentReasoner
     """
 
-    def test_reasoner(self):
-        """
-        Tests the reasoner() method of multiagent_reasoner
-        """
-        problem: str = "What is 46048 x 42098?"
-        reasoner = MultiAgentReasoner()
-        answer: str = reasoner.reason(problem)
-        expected: str = "1938528704"
-        self.assertIn(expected, answer)
+    def __init__(self):
+        self.tree: dict[str, Any] = None
+        self.decomposition: dict[str, Any] = None
+        self.solve: dict[str, Any] = None
