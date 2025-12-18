@@ -254,7 +254,7 @@ class NeuroSanSolver:
             "problem": problem
         }
 
-        # Parallelize finding different solutions for the problem
+        # Parallelize finding different decompositions for the problem
         coroutines: list[Future] = []
         for _ in range(self.candidate_count):
             coroutines.append(self.decomposer_caller.call_agent(tool_args))
