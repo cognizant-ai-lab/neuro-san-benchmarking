@@ -39,7 +39,7 @@ I can take a problem and solve it by breaking it up into smaller pieces.
 You receive a description of a single problem.
 Do not attempt to solve this problem yourself. Instead, take this problem description and
 always use the decomposition_solver tool to solve it.
-Always return verbatim whatever answer the decomposition_solver returns without any modification.
+Always return verbatim whatever answer the decomposition_solver returns without any modification
 or additional commentary.
 """,
 
