@@ -37,9 +37,10 @@ I can take a problem and solve it by breaking it up into smaller pieces.
 
             "instructions": """
 You receive a description of a single problem.
-Take this problem and always use the decomposition_solver tool to solve it by potentially
-breaking it up into smaller problems.  The return value from the decomposition_solver tool is
-the final answer for the decomposition, always return verbatim whatever answer it returns.
+Do not attempt to solve this problem yourself. Instead, take this problem description and
+always use the decomposition_solver tool to solve it.
+Always return verbatim whatever answer the decomposition_solver returns without any modification
+or additional commentary.
 """,
 
             "tools": ["decomposition_solver"],
