@@ -16,6 +16,9 @@
 
 from typing import Any
 
+from asyncio import Future
+from asyncio import gather
+
 import logging
 
 from decomposer.agent_caller import AgentCaller
@@ -63,10 +66,20 @@ class FirstToKVoter(Voter):
             self.candidates_key: candidates
         }
 
+        # Prepare a list of coroutines to parallelize
+        coroutines: list[Future] = []
+        for _ in range(self.number_of_votes):
+            # All entries for parallelization do the same thing.
+            # Note: Perhaps not the most token/cost efficient, but definitely good for time.
+            coroutines.append(self.discriminator_caller.call_agent(tool_args))
+
+        # Call the agents in parallel
+        results: list[str] = await gather(*coroutines)
+
+        # Process the votes
         votes: list[int] = [0] * len(candidates)
         winner_idx: int = None
-        for _ in range(self.number_of_votes):
-            vote_txt: str = await self.discriminator_caller.call_agent(tool_args)
+        for vote_txt in results:
             logging.info(f"{self.source} raw vote: {vote_txt}")
             try:
                 idx: int = int(vote_txt) - 1

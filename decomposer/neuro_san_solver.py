@@ -16,6 +16,8 @@
 
 from typing import Any
 
+from asyncio import Future
+from asyncio import gather
 import logging
 
 from neuro_san.client.agent_session_factory import AgentSession
@@ -166,12 +168,17 @@ class NeuroSanSolver:
         logging.info(f"{source} using decomposition")
         node["decomposition"] = decomp_meta
 
-        s1_node = self.solve(p1, depth + 1, max_depth, f"{path}.0")
-        s2_node = self.solve(p2, depth + 1, max_depth, f"{path}.1")
-        node["children"] = [s1_node, s2_node]
+        # Parallelize solving each sub-problem
+        problems: list[str] = [p1, p2]
+        coroutines: list[Future] = []
+        for i in range(2):
+            use_path: str = f"{path}.{i}"
+            coroutines.append(self.solve(problems[i], depth + 1, max_depth, use_path))
+        nodes: list[dict[str, Any]] = await gather(*coroutines)
 
-        s1: str = s1_node.get("extracted_final")
-        s2: str = s2_node.get("extracted_final")
+        node["children"] = nodes
+        s1: str = nodes[0].get("extracted_final")
+        s2: str = nodes[1].get("extracted_final")
         node["sub_finals"] = {"s1_final": s1, "s2_final": s2}
 
         logging.info(f"{source} sub-answers -> s1_final={s1!r}, s2_final={s2!r}")
@@ -218,8 +225,14 @@ class NeuroSanSolver:
         tool_args: dict[str, Any] = {
             "problem": problem
         }
+
+        # Parallelize finding different solutions for the problem
+        coroutines: list[Future] = []
         for k in range(self.solution_candidate_count):
-            r: str = await self.problem_solver_caller.call_agent(tool_args)
+            coroutines.append(self.problem_solver_caller.call_agent(tool_args))
+        results: list[str] = await gather(*coroutines)
+
+        for k, r in enumerate(results):
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
@@ -240,8 +253,14 @@ class NeuroSanSolver:
         tool_args: dict[str, Any] = {
             "problem": problem
         }
+
+        # Parallelize finding different decompositions for the problem
+        coroutines: list[Future] = []
         for _ in range(self.candidate_count):
-            resp: str = await self.decomposer_caller.call_agent(tool_args)
+            coroutines.append(self.decomposer_caller.call_agent(tool_args))
+        results: list[str] = await gather(*coroutines)
+
+        for resp in results:
             cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
