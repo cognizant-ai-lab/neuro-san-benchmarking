@@ -22,8 +22,8 @@ from neuro_san.interfaces.coded_tool import CodedTool
 from neuro_san.internals.graph.activations.branch_activation import BranchActivation
 
 from coded_tools.multiagent_decomposer.coded_tool_agent_caller import CodedToolAgentCaller
-from decomposer.neuro_san_solver import NeuroSanSolver
-from decomposer.solver_parsing import SolverParsing
+from coded_tools.multiagent_decomposer.neuro_san_solver import NeuroSanSolver
+from coded_tools.multiagent_decomposer.solver_parsing import SolverParsing
 
 
 class DecompositionSolver(BranchActivation, CodedTool):

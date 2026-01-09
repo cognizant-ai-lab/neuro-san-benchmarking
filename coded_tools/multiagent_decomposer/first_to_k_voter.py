@@ -21,8 +21,8 @@ from asyncio import gather
 
 import logging
 
-from decomposer.agent_caller import AgentCaller
-from decomposer.voter import Voter
+from coded_tools.multiagent_decomposer.agent_caller import AgentCaller
+from coded_tools.multiagent_decomposer.voter import Voter
 
 
 class FirstToKVoter(Voter):

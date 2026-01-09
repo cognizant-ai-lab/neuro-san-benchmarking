@@ -21,8 +21,8 @@ import logging
 
 from neuro_san.internals.graph.activations.branch_activation import BranchActivation
 
-from decomposer.agent_caller import AgentCaller
-from decomposer.solver_parsing import SolverParsing
+from coded_tools.multiagent_decomposer.agent_caller import AgentCaller
+from coded_tools.multiagent_decomposer.solver_parsing import SolverParsing
 
 
 class CodedToolAgentCaller(AgentCaller):

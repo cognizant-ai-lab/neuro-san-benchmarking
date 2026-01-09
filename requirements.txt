@@ -1,5 +1,5 @@
 # Neuro SAN - Core dependency for agent session management
-neuro-san>=0.6.19
+neuro-san>=0.6.20
 
 # OpenAI API for LLM calls
 openai>=1.0.0

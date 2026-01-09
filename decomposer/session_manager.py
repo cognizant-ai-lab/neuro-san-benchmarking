@@ -27,8 +27,6 @@ class SessionManager:
     Singleton class to manage agent sessions.
     """
 
-    AGENTS_PORT: int = 30011
-
     # Global, shared across threads
     _factory_lock: RLock = RLock()
     _factory: AgentSessionFactory | None = None
@@ -45,8 +43,10 @@ class SessionManager:
             sess = SessionManager._sessions.get(agent_name)
             if sess is None:
                 sess = SessionManager._factory.create_session(
-                    "direct", agent_name, "localhost", SessionManager.AGENTS_PORT, False,
-                    {"user_id": os.environ.get("USER")}
+                    "direct",
+                    agent_name,
+                    use_direct=True,
+                    metadata={"user_id": os.environ.get("USER")}
                 )
                 SessionManager._sessions[agent_name] = sess
             return sess
