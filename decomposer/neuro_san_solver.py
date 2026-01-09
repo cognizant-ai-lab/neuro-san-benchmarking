@@ -56,29 +56,62 @@ class NeuroSanSolver:
         if self.solution_candidate_count is None:
             self.solution_candidate_count = default_count
 
-        session: AgentSession = None
         self.parsing = SolverParsing()
 
-        # Initialize the Neuro SAN agent session callers
-        session = SessionManager.get_session("composition_discriminator")
-        self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+        self.composition_discriminator_caller: AgentCaller = None
+        self.decomposer_caller: AgentCaller = None
+        self.problem_solver_caller: AgentCaller = None
+        self.solution_discriminator_caller: AgentCaller = None
 
-        session = SessionManager.get_session("decomposer")
-        self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+    def set_callers(self, composition_discriminator_caller: AgentCaller,
+                    decomposer_caller: AgentCaller,
+                    problem_solver_caller: AgentCaller,
+                    solution_discriminator_caller: AgentCaller):
+        """
+        Set AgentCallers.
+        """
 
-        session = SessionManager.get_session("problem_solver")
-        self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+        if composition_discriminator_caller is not None:
+            self.composition_discriminator_caller = composition_discriminator_caller
+        if decomposer_caller is not None:
+            self.decomposer_caller = decomposer_caller
+        if problem_solver_caller is not None:
+            self.problem_solver_caller = problem_solver_caller
+        if solution_discriminator_caller is not None:
+            self.solution_discriminator_caller = solution_discriminator_caller
 
-        session = SessionManager.get_session("solution_discriminator")
-        self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+    def set_callers_if_not_already_set(self):
+        """
+        Initialize AgentCallers if they are not already set.
+        """
+        session: AgentSession = None
 
-    def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
+        # DEF - these need to be async now
+        if self.composition_discriminator_caller is None:
+            session = SessionManager.get_session("composition_discriminator")
+            self.composition_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+
+        if self.decomposer_caller is None:
+            session = SessionManager.get_session("decomposer")
+            self.decomposer_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        if self.problem_solver_caller is None:
+            session = SessionManager.get_session("problem_solver")
+            self.problem_solver_caller: AgentCaller = NeuroSanAgentCaller(session)
+
+        if self.solution_discriminator_caller is None:
+            session = SessionManager.get_session("solution_discriminator")
+            self.solution_discriminator_caller: AgentCaller = NeuroSanAgentCaller(session, self.parsing)
+
+    async def solve(self, problem: str, depth: int, max_depth: int, path: str = "0") -> dict[str, Any]:
         """
         Internal recursive solver that returns (response, trace_node).
         Builds a complete trace tree of the decomposition process.
 
         :return: The root trace node of the decomposition process
         """
+        self.set_callers_if_not_already_set()
+
         logging.info(f"[solve] depth={depth} path={path} problem: {problem[:120]}{'...' if len(problem) > 120 else ''}")
 
         node = {
@@ -91,14 +124,14 @@ class NeuroSanSolver:
             "composition": None,
             "response": None,
             "final": None,
-            "final_num": None,
             "extracted_final": None,
-            "error": None,
+            "atomic": None,
+            # Not included: "final_num" and "error"
         }
 
         if depth >= max_depth:
             logging.info(f"[solve] depth={depth} -> atomic (max depth)")
-            resp, finals, votes, winner_idx, solutions = self._solve_atomic_with_voting(problem)
+            resp, finals, votes, winner_idx, solutions = await self._solve_atomic_with_voting(problem)
             _ = solutions
             node["response"] = resp
             node["final"] = finals[winner_idx]
@@ -111,14 +144,14 @@ class NeuroSanSolver:
             node["extracted_final"] = self.parsing.extract_final(resp)
             return node
 
-        p1, p2, c, decomp_meta = self.decompose(problem)
+        p1, p2, c, decomp_meta = await self.decompose(problem)
 
         source: str = f"[solve] depth={depth}"
         if not p1 or not p2 or not c:
             logging.info(f"{source} -> atomic (no decomp)")
             if decomp_meta:
                 node["decomposition"] = {**decomp_meta, "decision": "no_decomposition"}
-            resp, finals, votes, winner_idx, solutions = self._solve_atomic_with_voting(problem)
+            resp, finals, votes, winner_idx, solutions = await self._solve_atomic_with_voting(problem)
             node["response"] = resp
             node["final"] = finals[winner_idx]
             node["atomic"] = {
@@ -146,7 +179,7 @@ class NeuroSanSolver:
         comp_prompt = self._compose_prompt(c, s1, s2)
         logging.info(f"{source} composing with C={c!r}")
 
-        resp, finals, votes, winner_idx, solutions = self._solve_generic(comp_prompt, source)
+        resp, finals, votes, winner_idx, solutions = await self._solve_generic(comp_prompt, source)
 
         node["response"] = resp
         node["final"] = finals[winner_idx]
@@ -168,20 +201,14 @@ class NeuroSanSolver:
         """
         return f"Solve C(P1, P2) such that C={c}, P1={s1}, P2={s2}"
 
-    def _solve_atomic(self, problem: str) -> str:
-        """
-        Single call to problem_solver; returns the full agent response.
-        """
-        return self.problem_solver_caller.call_agent(problem)
-
-    def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
+    async def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
         Generate multiple atomic solutions and vote on them.
         Returns (chosen_response, finals, votes, winner_idx, solutions).
         """
-        return self._solve_generic(problem, "[atomic]")
+        return await self._solve_generic(problem, "[atomic]")
 
-    def _solve_generic(self, problem: str, source: str) -> tuple[str, list[str], list[int], int, list[str]]:
+    async def _solve_generic(self, problem: str, source: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
         Generate multiple atomic solutions and vote on them.
         Returns (chosen_response, finals, votes, winner_idx, solutions).
@@ -189,18 +216,18 @@ class NeuroSanSolver:
         solutions: list[str] = []
         finals: list[str] = []
         for k in range(self.solution_candidate_count):
-            r: str = self.problem_solver_caller.call_agent(problem)
+            r: str = await self.problem_solver_caller.call_agent(problem)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
         voter: Voter = FirstToKVoter(source, "composition", self.composition_discriminator_caller,
                                      self.number_of_votes, self.winning_vote_count)
-        votes, winner_idx = voter.vote(problem, finals)
+        votes, winner_idx = await voter.vote(problem, finals)
 
         return solutions[winner_idx], finals, votes, winner_idx, solutions
 
-    def decompose(self, problem: str) -> tuple[str | None, str | None, str | None, dict]:
+    async def decompose(self, problem: str) -> tuple[str | None, str | None, str | None, dict]:
         """
         Collect CANDIDATE_COUNT decompositions from the 'decomposer' agent,
         then run a voting round via 'solution_discriminator'.
@@ -208,7 +235,7 @@ class NeuroSanSolver:
         """
         candidates: list[str] = []
         for _ in range(self.candidate_count):
-            resp: str = self.decomposer_caller.call_agent(problem)
+            resp: str = await self.decomposer_caller.call_agent(problem)
             cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
@@ -221,7 +248,7 @@ class NeuroSanSolver:
 
         voter: Voter = FirstToKVoter("[decompose]", "solution", self.solution_discriminator_caller,
                                      self.number_of_votes, self.winning_vote_count)
-        votes, winner_idx = voter.vote(problem, candidates)
+        votes, winner_idx = await voter.vote(problem, candidates)
 
         p1, p2, c = self.parsing.parse_decomposition(candidates[winner_idx])
 

@@ -20,7 +20,7 @@ class Voter:
     Generic voter interface
     """
 
-    def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
+    async def vote(self, problem: str, candidates: list[str]) -> tuple[list[int], int]:
         """
         Generic voting interface
 

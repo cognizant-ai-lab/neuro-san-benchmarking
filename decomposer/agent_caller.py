@@ -28,7 +28,7 @@ class AgentCaller:
         """
         raise NotImplementedError
 
-    def call_agent(self, text: str) -> str:
+    async def call_agent(self, text: str) -> str:
         """
         Call an agent with text
 
