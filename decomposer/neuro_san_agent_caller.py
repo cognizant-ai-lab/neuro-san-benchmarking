@@ -22,6 +22,7 @@ from threading import get_ident
 
 from neuro_san.client.streaming_input_processor import StreamingInputProcessor
 from neuro_san.interfaces.agent_session import AgentSession
+from neuro_san.internals.graph.activations.argument_assigner import ArgumentAssigner
 
 from decomposer.agent_caller import AgentCaller
 from decomposer.solver_parsing import SolverParsing
@@ -56,10 +57,17 @@ class NeuroSanAgentCaller(AgentCaller):
             return self.name
         return f"{self.agent_session}"
 
-    async def call_agent(self, text: str, timeout_ms: float = 100000.0) -> str:
+    async def call_agent(self, tool_args: dict[str, Any], timeout_ms: float = 100000.0) -> str:
         """
         Call a single agent with given text, return its response.
+
+        :param tool_args: A dictionary of arguments to pass to the agent
+        :return: The text of the response
         """
+        assigner = ArgumentAssigner(properties=None)
+        arg_text: list[str] = assigner.assign(tool_args)
+        text: str = "\n".join(arg_text)
+
         # Set up the chat state for the request
         chat_state: dict[str, Any] = {
             "last_chat_response": None,

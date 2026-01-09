@@ -33,8 +33,11 @@ You will receive a problem statement along with a number of suggested decomposit
                             "description": "Description of a problem."
                         },
                         "decompositions": {
-                            "type": "string",
-                            "description": "A set of decompositions of the problem."
+                            "type": "array",
+                            "description": "An ordered list of decompositions of the problem."
+                            "items": {
+                                "type": "string"
+                            }
                         },
                     },
                     "required": ["problem", "decompositions"]

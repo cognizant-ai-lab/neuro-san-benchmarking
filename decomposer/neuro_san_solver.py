@@ -215,13 +215,16 @@ class NeuroSanSolver:
         """
         solutions: list[str] = []
         finals: list[str] = []
+        tool_args: dict[str, Any] = {
+            "problem": problem
+        }
         for k in range(self.solution_candidate_count):
-            r: str = await self.problem_solver_caller.call_agent(problem)
+            r: str = await self.problem_solver_caller.call_agent(tool_args)
             solutions.append(r)
             finals.append(self.parsing.extract_final(r))
             logging.info(f"{source} candidate {k + 1}: {finals[-1]}")
 
-        voter: Voter = FirstToKVoter(source, "composition", self.composition_discriminator_caller,
+        voter: Voter = FirstToKVoter(source, "composition", "solutions", self.composition_discriminator_caller,
                                      self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = await voter.vote(problem, finals)
 
@@ -234,8 +237,11 @@ class NeuroSanSolver:
         Returns (p1, p2, c, metadata_dict).
         """
         candidates: list[str] = []
+        tool_args: dict[str, Any] = {
+            "problem": problem
+        }
         for _ in range(self.candidate_count):
-            resp: str = await self.decomposer_caller.call_agent(problem)
+            resp: str = await self.decomposer_caller.call_agent(tool_args)
             cand: str = self.parsing.extract_decomposition_text(resp)
             if cand:
                 candidates.append(cand)
@@ -246,7 +252,7 @@ class NeuroSanSolver:
         if not candidates:
             return None, None, None, {}
 
-        voter: Voter = FirstToKVoter("[decompose]", "solution", self.solution_discriminator_caller,
+        voter: Voter = FirstToKVoter("[decompose]", "solution", "decompositions", self.solution_discriminator_caller,
                                      self.number_of_votes, self.winning_vote_count)
         votes, winner_idx = await voter.vote(problem, candidates)
 
