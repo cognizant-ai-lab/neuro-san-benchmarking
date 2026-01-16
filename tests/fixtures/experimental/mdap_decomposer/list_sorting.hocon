@@ -23,6 +23,9 @@
     # Describes what agent to test against.
     "agent": "experimental/mdap_decomposer",
 
+    # We don't need to start a server in order to run this test.
+    "connection": "direct",
+
     # Use direct connections when invoking external agents.
     "use_direct": true,
 
