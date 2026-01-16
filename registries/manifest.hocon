@@ -1,4 +1,4 @@
 {
-    "multiagent_decomposer.hocon": true
+    "experimental/mdap_decomposer.hocon": true
     "multi_step_decomposer.hocon": true
 }

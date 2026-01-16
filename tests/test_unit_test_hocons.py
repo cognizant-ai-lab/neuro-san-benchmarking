@@ -41,7 +41,8 @@ class TestUnitTestHocons(TestCase):
         # Barring that, try to stick to alphabetical order.
 
         # Comment this back in when it's working more reliably.
-        "multiagent_decomposer/readme_test_case.hocon",
+        "mdap_decomposer/list_sorting.hocon",
+        "mdap_decomposer/long_multiplication.hocon",
 
         # List more hocon files as they become available here.
     ]), skip_on_empty=True)
