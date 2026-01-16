@@ -65,7 +65,7 @@ def _validate_state(state, num_disks=20):
     flat = [x for t in state for x in t]
     if not all(isinstance(x, int) for x in flat):
         raise ValueError("All entries in 'next_state' must be integers.")
-    if len(flat) != num_disks or set(flat) != set(range(1, num_disks+1)):
+    if len(flat) != num_disks or set(flat) != set(range(1, num_disks + 1)):
         missing = sorted(set(range(1, 21)) - set(flat))
         extra = sorted(set(flat) - set(range(1, 21)))
         raise ValueError(f"State must contain 1..{num_disks} exactly once. "
