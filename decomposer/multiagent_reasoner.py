@@ -310,7 +310,7 @@ class MultiAgentReasoner:
         :returns: A tuple of the final agent response (which includes the {FINAL_TOKEN} line).
                   and the extracted final answer from that line
         """
-        session: AgentSession = SessionManager.get_session("multiagent_decomposer")
+        session: AgentSession = SessionManager.get_session("experimental/mdap_decomposer")
         agent_caller = NeuroSanAgentCaller(session)
 
         tool_args: dict[str, Any] = {

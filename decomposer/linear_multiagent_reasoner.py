@@ -46,7 +46,7 @@ NUMBER_OF_VOTES = (2 * WINNING_VOTE_COUNT) - 1
 
 
 def _build_steps_block(all_steps: List[str]) -> str:
-    return "\n".join(f"{i+1}) {s}" for i, s in enumerate(all_steps))
+    return "\n".join(f"{i + 1}) {s}" for i, s in enumerate(all_steps))
 
 
 def multi_step_decomposer_session() -> AgentSession:
@@ -176,7 +176,7 @@ def _compose_step_prompt(
         "Use ALL prior outputs and ALL steps for context, but ONLY execute the CURRENT STEP now.\n"
         f"problem: ORIGINAL PROBLEM:\n{original_problem}\n\n"
         f"ALL STEPS:\n{steps_block}\n\n"
-        f"CURRENT STEP ({step_index+1}/{len(all_steps)}):\n{step_instruction}\n\n"
+        f"CURRENT STEP ({step_index + 1}/{len(all_steps)}):\n{step_instruction}\n\n"
         f"HISTORY (all prior outputs):\n{history_block}\n"
     )
 

@@ -1,5 +1,5 @@
 
-# Copyright © 2023-2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+# Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@
 
 {
     # Describes what agent to test against.
-    "agent": "multiagent_decomposer",
+    "agent": "experimental/mdap_decomposer",
+
+    # We don't need to start a server in order to run this test.
+    "connection": "direct",
 
     # Use direct connections when invoking external agents.
     "use_direct": true,

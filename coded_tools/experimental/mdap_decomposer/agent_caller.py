@@ -1,4 +1,4 @@
-# Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+# Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,11 +30,12 @@ class AgentCaller:
         """
         raise NotImplementedError
 
-    async def call_agent(self, tool_args: dict[str, Any]) -> str:
+    async def call_agent(self, tool_args: dict[str, Any], sly_data: dict[str, Any] = None) -> str:
         """
         Call an agent with text
 
         :param tool_args: A dictionary of arguments to pass to the agent
+        :param sly_data: A dictionary of private data to pass to the agent
         :return: The text of the response
         """
         raise NotImplementedError

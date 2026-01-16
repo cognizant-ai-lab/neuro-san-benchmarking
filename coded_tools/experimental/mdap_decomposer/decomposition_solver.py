@@ -1,5 +1,4 @@
-
-# Copyright © 2023-2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+# Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +20,9 @@ from typing import Dict
 from neuro_san.interfaces.coded_tool import CodedTool
 from neuro_san.internals.graph.activations.branch_activation import BranchActivation
 
-from coded_tools.multiagent_decomposer.coded_tool_agent_caller import CodedToolAgentCaller
-from coded_tools.multiagent_decomposer.neuro_san_solver import NeuroSanSolver
-from coded_tools.multiagent_decomposer.solver_parsing import SolverParsing
+from coded_tools.experimental.mdap_decomposer.coded_tool_agent_caller import CodedToolAgentCaller
+from coded_tools.experimental.mdap_decomposer.neuro_san_solver import NeuroSanSolver
+from coded_tools.experimental.mdap_decomposer.solver_parsing import SolverParsing
 
 
 class DecompositionSolver(BranchActivation, CodedTool):
@@ -109,28 +108,35 @@ class DecompositionSolver(BranchActivation, CodedTool):
         """
 
         # Create the solver and use some of the arguments to configure it
-        solver = NeuroSanSolver(winning_vote_count=args.get("winning_vote_count", 2),
-                                candidate_count=args.get("candidate_count"),
-                                number_of_votes=args.get("number_of_votes"),
-                                solution_candidate_count=args.get("solution_candidate_count"))
+        solver = NeuroSanSolver(
+            winning_vote_count=args.get("winning_vote_count", 2),
+            candidate_count=args.get("candidate_count"),
+            number_of_votes=args.get("number_of_votes"),
+            solution_candidate_count=args.get("solution_candidate_count"),
+        )
 
         tools: Dict[str, str] = {}
         tools = args.get("tools", tools)
 
         # Set up the AgentCallers to use this CodedTool as a basis for calling the agents.
         parsing = SolverParsing()
-        composition_discriminator_caller = CodedToolAgentCaller(self, parsing,
-                                                                name=tools.get("composition_discriminator"))
+        composition_discriminator_caller = CodedToolAgentCaller(
+            self, parsing, name=tools.get("composition_discriminator")
+        )
         decomposer_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("decomposer"))
         problem_solver_caller = CodedToolAgentCaller(self, parsing=None, name=tools.get("problem_solver"))
         solution_discriminator_caller = CodedToolAgentCaller(self, parsing, name=tools.get("solution_discriminator"))
-        solver.set_callers(composition_discriminator_caller,
-                           decomposer_caller,
-                           problem_solver_caller,
-                           solution_discriminator_caller)
+        solver.set_callers(
+            composition_discriminator_caller,
+            decomposer_caller,
+            problem_solver_caller,
+            solution_discriminator_caller,
+        )
 
         problem: str = args.get("problem")
         max_depth: int = args.get("max_depth", 5)
+        if max_depth is None:
+            max_depth = 5
 
         # Call the solver to solve the problem by decomposition
         trace_node: dict[str, Any] = await solver.solve(problem, depth=0, max_depth=max_depth)

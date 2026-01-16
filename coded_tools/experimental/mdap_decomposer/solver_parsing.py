@@ -1,4 +1,4 @@
-# Copyright © 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+# Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class SolverParsing:
             # Find LAST occurrence of token in this line (case-insensitive)
             idx = ln.lower().rfind(tkn_lower)
             if idx != -1:
-                return ln[idx + len(tkn):].strip()
+                return ln[idx + len(tkn) :].strip()
         return lines[-1]
 
     def extract_decomposition_text(self, resp: str) -> str | None:
@@ -89,6 +89,9 @@ class SolverParsing:
         return p1, p2, c
 
     def unbracket(self, s: str | None) -> str | None:
+        """
+        Remove leading and trailing square brackets, and coerce "None" to None.
+        """
         if not s:
             return None
         s = s.strip()

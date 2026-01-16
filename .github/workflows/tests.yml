@@ -50,6 +50,7 @@ jobs:
           pytest --verbose -m "not integration and not smoke" --timer-top-n 10 -n auto --cov-config=.coveragerc --cov
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENT_MANIFEST_FILE: "./registries/manifest.hocon"
           AGENT_TOOL_PATH: "./coded_tools"
           PYTHONPATH: ${{ env.PYTHONPATH }}:"."
 
