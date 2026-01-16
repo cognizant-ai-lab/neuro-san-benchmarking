@@ -41,8 +41,8 @@ class TestUnitTestHocons(TestCase):
         # Barring that, try to stick to alphabetical order.
 
         # Comment this back in when it's working more reliably.
-        "mdap_decomposer/list_sorting.hocon",
-        "mdap_decomposer/long_multiplication.hocon",
+        "experimental/mdap_decomposer/list_sorting.hocon",
+        "experimental/mdap_decomposer/long_multiplication.hocon",
 
         # List more hocon files as they become available here.
     ]), skip_on_empty=True)
