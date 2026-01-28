@@ -34,6 +34,12 @@ The main components under decomposer/ are:
    export OPENAI_API_KEY="your-api-key-here"
    ```
 
+5. Update Python path:
+
+   ```bash
+   export PYTHONPATH=$(pwd)
+   ```
+
 ## Usage
 
 ### Single Problem
