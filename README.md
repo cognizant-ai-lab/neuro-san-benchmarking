@@ -22,7 +22,7 @@ The main components under decomposer/ are:
    source venv/bin/activate
    ```
 
-3. Install dependencies:
+3. Install dependencies (takes around one minute on a standard laptop):
 
    ```bash
    pip install -r requirements.txt
