@@ -14,6 +14,8 @@ The main components under decomposer/ are:
 
 ## Installation
 
+Note: This code has been tested with Python 3.12 and MAX OS 15.6.
+
 1. Clone this repository
 2. Create a virtual environment:
 
