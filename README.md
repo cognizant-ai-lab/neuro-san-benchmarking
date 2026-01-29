@@ -133,6 +133,18 @@ The `data/` directory contains sample benchmark datasets:
 - `bench_long_mul_10_10__200.jsonl` - 200 10×10 digit multiplication problems
 - `bench_sort_len_500__50.jsonl` - 50 sorting problems
 
+## Playground
+
+A jupyter notebook demonstrating the core methods of MAKER in the Towers of Hanoi domain is located at `maker_playground/hanoi.ipyb`.
+
+## Expected Runtime
+
+The runtime is dominated by the LLM calls to external APIs, e.g., OpenAI.
+The time per step depends on the latency of the API, which can range from seconds to minutes.
+When not parallelized, the total runtime scales linearly with the number of steps times the number of votes per steps.
+When fully parallelized, the total runtime scales linearly with the depth of the task decomposition.
+
+
 ## License
 
 See LICENSE.txt in the parent repository.
