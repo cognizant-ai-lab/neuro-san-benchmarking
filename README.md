@@ -146,7 +146,8 @@ When fully parallelized, the total runtime scales linearly with the depth of the
 
 ## Running Original Code
 
-To run the version of the code used to produce the results in https://arxiv.org/abs/2511.09030 (Appendix F), checkout the corresponding commit from 11/20/25:
+To run the version of the code used to produce the results in <https://arxiv.org/abs/2511.09030> (Appendix F),
+checkout the corresponding commit from 11/20/25:
 
 ```bash
 git checkout a7a22f8
