@@ -29,8 +29,8 @@ class SolverParsing:
     # agents end their final answer on the last line after this token
     FINAL_TOKEN: str = os.getenv("FINAL_TOKEN", "vote:")
 
-    # Match P1=, P2=, C= (internal name) or F= (agent prompt name for composition function)
-    _DECOMP_FIELD_RE: re.Pattern = re.compile(r"(P1|P2|C|F)\s*=\s*\[(.*?)]", re.DOTALL)
+    # Match P1=, P2=, F= (agent prompt name for composition function)
+    _DECOMP_FIELD_RE: re.Pattern = re.compile(r"(P1|P2|F)\s*=\s*\[(.*?)]", re.DOTALL)
 
     def extract_final(self, text: str, token: str = FINAL_TOKEN) -> str:
         """
@@ -56,8 +56,8 @@ class SolverParsing:
 
     def extract_decomposition_text(self, resp: str) -> str | None:
         """
-        Scan the FULL agent response (multi-line) for P1=[...], P2=[...], C=[...].
-        Returns a canonical single-line 'P1=[...], P2=[...], C=[...]' or None.
+        Scan the FULL agent response (multi-line) for P1=[...], P2=[...], F=[...].
+        Returns a canonical single-line 'P1=[...], P2=[...], F=[...]' or None.
         """
         fields = {}
         for label, val in self._DECOMP_FIELD_RE.findall(resp or ""):
@@ -66,19 +66,18 @@ class SolverParsing:
         if fields:
             p1 = fields.get("P1", "None")
             p2 = fields.get("P2", "None")
-            # Support both C= (internal) and F= (agent prompt notation) for composition function
             c = fields.get("C") or fields.get("F", "None")
-            return f"P1=[{p1}], P2=[{p2}], C=[{c}]"
+            return f"P1=[{p1}], P2=[{p2}], F=[{c}]"
 
         # Fallback: if the last line already contains the canonical string
         tail = self.extract_final(resp)
-        if "P1=" in tail and "C=" in tail:
+        if "P1=" in tail and "F=" in tail:
             return tail
         return None
 
     def parse_decomposition(self, decomp_line: str) -> tuple[str | None, str | None, str | None]:
         """
-        Parses: P1=[p1], P2=[p2], C=[c]
+        Parses: P1=[p1], P2=[p2], F=[c]
         Returns (p1, p2, c) with 'None' coerced to None.
         """
         parts = {
@@ -87,7 +86,7 @@ class SolverParsing:
 
         p1 = self.unbracket(parts.get("P1"))
         p2 = self.unbracket(parts.get("P2"))
-        c = self.unbracket(parts.get("C"))
+        c = self.unbracket(parts.get("F"))
         return p1, p2, c
 
     def unbracket(self, s: str | None) -> str | None:
