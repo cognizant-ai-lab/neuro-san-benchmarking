@@ -29,7 +29,6 @@ class SolverParsing:
     # agents end their final answer on the last line after this token
     FINAL_TOKEN: str = os.getenv("FINAL_TOKEN", "vote:")
 
-    # Match P1=, P2=, F= (agent prompt name for composition function)
     _DECOMP_FIELD_RE: re.Pattern = re.compile(r"(P1|P2|F)\s*=\s*\[(.*?)]", re.DOTALL)
 
     def extract_final(self, text: str, token: str = FINAL_TOKEN) -> str:
@@ -66,7 +65,7 @@ class SolverParsing:
         if fields:
             p1 = fields.get("P1", "None")
             p2 = fields.get("P2", "None")
-            c = fields.get("C") or fields.get("F", "None")
+            c = fields.get("F", "None")
             return f"P1=[{p1}], P2=[{p2}], F=[{c}]"
 
         # Fallback: if the last line already contains the canonical string
