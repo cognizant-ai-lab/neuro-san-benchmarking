@@ -14,6 +14,8 @@ The main components under decomposer/ are:
 
 ## Installation
 
+Note: This code has been tested with Python 3.12 and MAX OS 15.6.
+
 1. Clone this repository
 2. Create a virtual environment:
 
@@ -22,7 +24,7 @@ The main components under decomposer/ are:
    source venv/bin/activate
    ```
 
-3. Install dependencies:
+3. Install dependencies (takes around one minute on a standard laptop):
 
    ```bash
    pip install -r requirements.txt
@@ -32,6 +34,12 @@ The main components under decomposer/ are:
 
    ```bash
    export OPENAI_API_KEY="your-api-key-here"
+   ```
+
+5. Update Python path:
+
+   ```bash
+   export PYTHONPATH=$(pwd)
    ```
 
 ## Usage
@@ -124,6 +132,44 @@ The `data/` directory contains sample benchmark datasets:
 - `bench_long_mul_5_5__200.jsonl` - 200 5×5 digit multiplication problems
 - `bench_long_mul_10_10__200.jsonl` - 200 10×10 digit multiplication problems
 - `bench_sort_len_500__50.jsonl` - 50 sorting problems
+
+## Playground
+
+A jupyter notebook demonstrating the core methods of MAKER in the Towers of Hanoi domain is located at `maker_playground/hanoi.ipyb`.
+
+## Expected Runtime
+
+The runtime is dominated by the LLM calls to external APIs, e.g., OpenAI.
+The time per step depends on the latency of the API, which can range from seconds to minutes.
+When not parallelized, the total runtime scales linearly with the number of steps times the number of votes per steps.
+When fully parallelized, the total runtime scales linearly with the depth of the task decomposition.
+
+## Running Original Code
+
+To run the version of the code used to produce the results in <https://arxiv.org/abs/2511.09030> (Appendix F),
+checkout the corresponding commit from 11/20/25:
+
+```bash
+git checkout a7a22f8
+```
+
+Example of how to run benchmarks with this version of the code:
+
+```bash
+export WINNING_VOTE_COUNT=10
+export MAX_DEPTH=5
+export LOG_FAILURES_JSONL="./failures_5x5.jsonl"
+export LOG_DIR="./logs"
+
+python agent_benchmark_runner.py \
+  --python-prog multiagent_reasoner.py \
+  --task mul_5x5 \
+  --local-jsonl data/bench_long_mul_5_5__200.jsonl \
+  --answer-format number \
+  --num-workers 200 \
+  --limit 200 \
+  --timeout-ms 8000000
+```
 
 ## License
 
