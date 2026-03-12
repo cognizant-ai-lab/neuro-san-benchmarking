@@ -190,10 +190,10 @@ class NeuroSanSolver:
 
     def _compose_prompt(self, c: str, s1: str, s2: str) -> str:
         """
-        Build a prompt for the final composition solve: C(s1, s2).
+        Build a prompt for the final composition solve: F(s1, s2).
         We pass the original problem, the composition description, and the sub-solutions.
         """
-        return f"Solve C(P1, P2) such that C={c}, P1={s1}, P2={s2}"
+        return f"Solve F(P1, P2) such that F={c}, P1={s1}, P2={s2}"
 
     async def _solve_atomic_with_voting(self, problem: str) -> tuple[str, list[str], list[int], int, list[str]]:
         """
